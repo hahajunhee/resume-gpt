@@ -305,12 +305,9 @@ export default function App() {
     if (!auth) return;
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser);
+      // [수정] 로컬스토리지 체크 제거 -> 로그인할 때마다 튜토리얼 1단계 시작
       if (currentUser) {
-        // Check Tutorial
-        const hasSeen = localStorage.getItem('hasSeenTutorial');
-        if (!hasSeen) {
-          setTutorialStep(1);
-        }
+        setTutorialStep(1);
       }
     });
     return () => unsubscribe();
@@ -363,7 +360,6 @@ export default function App() {
 
   const finishTutorial = () => {
     setTutorialStep(0);
-    localStorage.setItem('hasSeenTutorial', 'true');
   };
 
   // --- Helper: Status Message ---
@@ -560,9 +556,9 @@ ${selStyle ? `[Tone]: ${selStyle.tone} / [Focus]: ${selStyle.focus}` : '기본 �
             </div>
           )}
 
-          {/* Step 2 Instructions */}
+          {/* Step 2 Instructions - [수정] 위치를 top-24에서 top-14로 올려서 화살표가 버튼을 더 정확히 가리키도록 함 */}
           {tutorialStep === 2 && (
-            <div className="absolute left-[280px] top-24 text-white">
+            <div className="absolute left-[280px] top-14 text-white">
               <div className="flex items-center gap-4">
                 <ArrowLeft size={48} className="text-yellow-400" />
                 <div>
@@ -581,8 +577,8 @@ ${selStyle ? `[Tone]: ${selStyle.tone} / [Focus]: ${selStyle.focus}` : '기본 �
         </div>
       )}
 
-      {/* Sidebar */}
-      <div className="w-64 bg-white border-r border-gray-200 flex flex-col shadow-lg z-10 relative">
+      {/* Sidebar - [수정] 튜토리얼 중일 때는 z-10 제한을 풀어서(z-auto) 자식 요소가 z-50 오버레이 위로 올라오게 함 */}
+      <div className={`w-64 bg-white border-r border-gray-200 flex flex-col shadow-lg relative ${tutorialStep > 0 ? 'z-auto' : 'z-10'}`}>
         <div className="p-6 border-b border-gray-100">
           <div className="flex items-center gap-2 text-blue-700 font-bold text-xl">
             <Sparkles className="fill-blue-600" /> <span>자소서 GPT</span>
