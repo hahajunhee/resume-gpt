@@ -27,7 +27,6 @@ const firebaseConfig = {
   appId: "1:1028616419862:web:2f6635eb745d15543a1337",
   measurementId: "G-MQ32GG48GK"
 };
-
 // 앱 초기화
 let app, auth, db;
 try {
@@ -491,10 +490,10 @@ export default function App() {
       query(collection(db, 'artifacts', appId, 'users', user.uid, 'profiles'), firestoreLimit(1)),
       async (snapshot) => {
          if (snapshot.empty) {
+           // [FIX] Don't set isProfileLoaded to true here! Just add default data.
+           // The next snapshot (with data) will handle the form binding.
            if (!isProfileLoaded.current) {
-             isProfileLoaded.current = true;
              try {
-               // Create Default Profile
                await addDoc(collection(db, 'artifacts', appId, 'users', user.uid, 'profiles'), {
                  ...DEFAULT_PROFILE,
                  createdAt: serverTimestamp()
@@ -505,7 +504,6 @@ export default function App() {
          } else {
            const docData = snapshot.docs[0];
            
-           // Data migration (String -> Array)
            const newData = { ...docData.data() };
            PROFILE_FIELDS.forEach(field => {
              if (typeof newData[field.id] === 'string') {
@@ -517,6 +515,7 @@ export default function App() {
            
            setProfile({ id: docData.id, ...newData });
 
+           // [FIX] This block ensures the form is updated when data arrives
            if (!isProfileLoaded.current) {
              setProfForm(newData);
              isProfileLoaded.current = true;
@@ -836,7 +835,6 @@ ${selStyle ? `[Tone]: ${selStyle.tone} / [Focus]: ${selStyle.focus}` : '기본 �
           {/* Generator Tab */}
           {activeTab === TABS.GENERATOR && (
             <div className="flex gap-6 h-full">
-              {/* Left Side: Expanded from w-1/3 to w-7/12 */}
               <div className="w-7/12 flex flex-col gap-6 overflow-y-auto pr-2 custom-scrollbar">
                  <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200 space-y-6">
                     <div>
@@ -925,7 +923,6 @@ ${selStyle ? `[Tone]: ${selStyle.tone} / [Focus]: ${selStyle.focus}` : '기본 �
                     <Button className="w-full" onClick={generatePrompt} disabled={savingTarget === 'generator'} icon={Sparkles}>프롬프트 생성</Button>
                  </div>
               </div>
-              {/* Right Side: Shrunk from w-2/3 to w-5/12 */}
               <div className="w-5/12 bg-slate-900 rounded-xl p-6 text-slate-200 overflow-y-auto whitespace-pre-wrap font-mono text-sm border border-slate-700">
                  {generatedPrompt || "좌측에서 재료를 선택하여 프롬프트를 생성하세요."}
               </div>
