@@ -27,6 +27,7 @@ const firebaseConfig = {
   appId: "1:1028616419862:web:2f6635eb745d15543a1337",
   measurementId: "G-MQ32GG48GK"
 };
+
 // 앱 초기화
 let app, auth, db;
 try {
@@ -490,9 +491,14 @@ export default function App() {
       query(collection(db, 'artifacts', appId, 'users', user.uid, 'profiles'), firestoreLimit(1)),
       async (snapshot) => {
          if (snapshot.empty) {
-           // [FIX] Don't set isProfileLoaded to true here! Just add default data.
-           // The next snapshot (with data) will handle the form binding.
+           // [FIX] 데이터가 없을 때: 기본값으로 폼 채우기 + DB 생성
            if (!isProfileLoaded.current) {
+             isProfileLoaded.current = true;
+             // 화면에 즉시 반영
+             setProfForm(DEFAULT_PROFILE);
+             setProfile({ id: 'temp_id', ...DEFAULT_PROFILE });
+
+             // DB 생성
              try {
                await addDoc(collection(db, 'artifacts', appId, 'users', user.uid, 'profiles'), {
                  ...DEFAULT_PROFILE,
@@ -500,7 +506,6 @@ export default function App() {
                });
              } catch (e) { console.error(e); }
            }
-           setProfile(null);
          } else {
            const docData = snapshot.docs[0];
            
@@ -515,7 +520,7 @@ export default function App() {
            
            setProfile({ id: docData.id, ...newData });
 
-           // [FIX] This block ensures the form is updated when data arrives
+           // [FIX] 데이터가 로드되면 폼에도 반영
            if (!isProfileLoaded.current) {
              setProfForm(newData);
              isProfileLoaded.current = true;
