@@ -27,6 +27,7 @@ const firebaseConfig = {
   appId: "1:1028616419862:web:2f6635eb745d15543a1337",
   measurementId: "G-MQ32GG48GK"
 };
+
 // 앱 초기화
 let app, auth, db;
 try {
@@ -82,44 +83,73 @@ const PROFILE_FIELDS = [
   { id: 'goals', label: '⑤ 장래 목표' }
 ];
 
-// --- Default Companies Data ---
+// --- Default Data Sets ---
 const DEFAULT_COMPANIES = [
   {
     name: "삼성전자",
     role: "미정",
-    vision: "미래 사회에 영감을 주고 새로운 미래를 창조한다. (AI, 6G, 로봇 등 미래 신기술 선도)",
-    business: "반도체(DS), 스마트폰(DX), 가전 / 최근 'AI 가전'과 '파운드리 초격차'에 집중",
+    vision: "미래 사회에 영감을 주고 새로운 미래를 창조한다.",
+    business: "반도체(DS), 스마트폰(DX), 가전 / AI 가전과 파운드리",
     talent: "열정, 창의혁신, 인간미, 도덕성",
-    jd_rnr: "1. 제품/서비스 기획 및 개발 2. 데이터 기반 시장 분석 3. 글로벌 공급망 관리",
-    jd_skills: "Hard: 데이터 분석, 프로그래밍 / Soft: 협업, 창의적 문제해결",
-    core_role_1: "초격차 기술 확보를 위한 R&D",
-    core_role_2: "고객 경험(CX) 혁신",
-    market_issue: "AI 반도체 시장의 급성장과 HBM 기술 경쟁 심화"
+    jd_rnr: "1. 기획 2. 분석 3. 관리",
+    jd_skills: "Hard: 데이터분석 / Soft: 협업",
+    core_role_1: "초격차 기술 확보",
+    core_role_2: "고객 경험 혁신",
+    market_issue: "AI 반도체 경쟁 심화"
   },
   {
     name: "현대자동차",
     role: "미정",
-    vision: "Progress for Humanity (인류를 위한 진보) / 스마트 모빌리티 솔루션 프로바이더",
-    business: "전기차(EV), 수소차, UAM(도심항공모빌리티), 로보틱스 / SDV(소프트웨어 중심 자동차) 전환 집중",
-    talent: "도전적 실행, 소통과 협력, 고객 최우선",
-    jd_rnr: "1. 모빌리티 서비스 기획 2. 전동화 부품 설계 및 개발 3. 글로벌 생산 운영 최적화",
-    jd_skills: "Hard: 기구 설계, SW 아키텍처 / Soft: 유연한 사고, 글로벌 마인드",
-    core_role_1: "전동화(Electrification) 전환 가속화",
-    core_role_2: "소프트웨어 기술 내재화",
-    market_issue: "글로벌 전기차 수요 둔화(Chasm) 극복 및 하이브리드 전략 병행"
+    vision: "Progress for Humanity",
+    business: "EV, 수소차, UAM, 로보틱스",
+    talent: "도전적 실행, 소통과 협력",
+    jd_rnr: "1. 기획 2. 설계 3. 운영",
+    jd_skills: "Hard: 기구설계 / Soft: 유연함",
+    core_role_1: "전동화 전환",
+    core_role_2: "SW 기술 내재화",
+    market_issue: "전기차 수요 둔화 극복"
   },
   {
     name: "LG",
     role: "미정",
-    vision: "고객의 삶을 더 가치 있게 만드는 기업 / 'Smart Life Solution' 기업으로 도약",
-    business: "가전, 전장부품(VS), 디스플레이, 배터리 / 최근 '전장 사업'과 'B2B 솔루션' 확장 집중",
-    talent: "LG Way (고객가치 창조, 인간존중의 경영) / 집요함, 전문성",
-    jd_rnr: "1. 고객 Pain Point 발굴 및 솔루션 제안 2. 신규 사업 모델 발굴 3. 품질 경영 프로세스 관리",
-    jd_skills: "Hard: 회로 설계, 마케팅 전략 / Soft: 고객 공감 능력, 끈기",
-    core_role_1: "1등 DNA를 바탕으로 한 시장 선도",
-    core_role_2: "디지털 전환(DX)을 통한 업무 혁신",
-    market_issue: "가전 시장의 포화와 구독 경제(구독 가전) 모델의 부상"
+    vision: "고객의 삶을 더 가치 있게 만드는 기업",
+    business: "가전, 전장, 배터리",
+    talent: "LG Way (고객가치, 인간존중)",
+    jd_rnr: "1. 제안 2. 발굴 3. 관리",
+    jd_skills: "Hard: 설계 / Soft: 끈기",
+    core_role_1: "시장 선도",
+    core_role_2: "디지털 전환(DX)",
+    market_issue: "구독 경제 모델 부상"
   }
+];
+
+const DEFAULT_EXPERIENCES = [
+  {
+    title: "[예시] 대학 축제 주점 운영 프로젝트",
+    motivation: "학생회비 부족 문제를 해결하고 학과 단합을 도모하기 위해 기획",
+    obstacle: "예산 부족으로 인한 재료 수급 어려움과 팀원 간의 메뉴 선정 갈등",
+    action: "저렴한 대량 구매처를 직접 발굴하여 비용 20% 절감, 투표를 통한 민주적 메뉴 선정 및 R&R 명확화",
+    verification: "일일 매출 장부 기록 및 고객 만족도 스티커 설문 조사 실시",
+    result: "역대 축제 최고 매출 달성 (순수익 150만원), 학과 인지도 상승",
+    learning: "제한된 자원 내에서의 효율적 운영 방법과 갈등 관리의 중요성 체득",
+    similarity: "목표 달성을 위한 기획력과 문제 해결 능력이 직무와 유사함",
+    philosophy: "안 되면 되게 하라, 주도적인 태도로 문제를 돌파하는 자세",
+    future: "입사 후 프로젝트 진행 시 예상치 못한 변수에도 유연하게 대처하며 성과를 창출하겠음"
+  }
+];
+
+const DEFAULT_PROFILE = {
+    strength: ["꼼꼼한 데이터 분석 능력", "긍정적인 소통 태도", "끝까지 파고드는 집요함"],
+    keywords: ["분석력", "책임감", "협업"],
+    experienceList: ["마케팅 공모전 은상 수상", "물류 센터 아르바이트 6개월", "해외 봉사활동 리더"],
+    values: ["신뢰를 최우선으로 생각함", "함께 성장하는 문화 지향"],
+    goals: ["데이터 기반 의사결정 전문가로 성장", "팀 내 대체 불가능한 핵심 인재 되기"]
+};
+
+const DEFAULT_STYLES = [
+  { tone: "진정성 있는/차분한", focus: "성장 과정과 가치관 중심" },
+  { tone: "자신감 넘치는/논리적인", focus: "성과 수치와 문제해결 역량 중심" },
+  { tone: "창의적인/트렌디한", focus: "새로운 시도와 인사이트 중심" }
 ];
 
 // --- Components ---
@@ -199,7 +229,6 @@ const MultiValueInput = ({ label, items = [], onChange, placeholder }) => {
         <Button onClick={handleAdd} variant="secondary" icon={Plus}>추가</Button>
       </div>
       <div className="space-y-2">
-        {/* Safety check: Ensure items is an array before mapping */}
         {Array.isArray(items) && items.map((item, idx) => (
           <div key={idx} className="flex items-center justify-between bg-gray-50 p-3 rounded-lg border border-gray-100 group hover:border-blue-200 transition-colors">
             <span className="text-sm text-gray-700">{item}</span>
@@ -376,18 +405,18 @@ export default function App() {
   const [compForm, setCompForm] = useState(
     COMP_FIELDS.reduce((acc, cur) => ({ ...acc, [cur.id]: '' }), {})
   );
-  // [Updated] Profile Form now stores arrays for each field
   const [profForm, setProfForm] = useState({ 
     strength: [], keywords: [], experienceList: [], values: [], goals: [] 
   });
   const [styleForm, setStyleForm] = useState({ tone: '', focus: '' });
 
-  // Flags
+  // Flags for Default Injection
   const isProfileLoaded = useRef(false);
-  const isCompanyLoaded = useRef(false); // Flag to check if default companies should be added
+  const isCompanyChecked = useRef(false); 
+  const isExperienceChecked = useRef(false);
+  const isStyleChecked = useRef(false);
 
   // Generator Selections
-  // [Updated] profDetail stores selected string items for each category
   const [selections, setSelections] = useState({
     expIds: [], compId: '', compFields: {}, 
     profDetail: { strength: [], keywords: [], experienceList: [], values: [], goals: [] }, 
@@ -396,7 +425,7 @@ export default function App() {
   
   const [generatedPrompt, setGeneratedPrompt] = useState('');
 
-  // --- Auth & Data Fetching & Tutorial Check ---
+  // --- Auth & Data Fetching ---
   useEffect(() => {
     if (!auth) return;
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
@@ -411,10 +440,27 @@ export default function App() {
   useEffect(() => {
     if (!user || !db) return;
     
-    // 1. Experiences
+    // 1. Experiences & Default Injection
     const subExp = onSnapshot(
       query(collection(db, 'artifacts', appId, 'users', user.uid, 'experiences'), orderBy('createdAt', 'desc')),
-      (snapshot) => setExperiences(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })))
+      async (snapshot) => {
+        const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        setExperiences(data);
+        
+        if (data.length === 0 && !isExperienceChecked.current) {
+          isExperienceChecked.current = true;
+          try {
+            const batch = writeBatch(db);
+            DEFAULT_EXPERIENCES.forEach(exp => {
+              const docRef = doc(collection(db, 'artifacts', appId, 'users', user.uid, 'experiences'));
+              batch.set(docRef, { ...exp, createdAt: serverTimestamp() });
+            });
+            await batch.commit();
+          } catch (e) { console.error(e); }
+        } else {
+          isExperienceChecked.current = true;
+        }
+      }
     );
 
     // 2. Companies & Default Data Injection
@@ -424,9 +470,8 @@ export default function App() {
         const loadedCompanies = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
         setCompanies(loadedCompanies);
 
-        // Add default companies if list is empty (only once per session load)
-        if (loadedCompanies.length === 0 && !isCompanyLoaded.current) {
-          isCompanyLoaded.current = true; // Prevent infinite loop or double addition
+        if (loadedCompanies.length === 0 && !isCompanyChecked.current) {
+          isCompanyChecked.current = true;
           try {
             const batch = writeBatch(db);
             DEFAULT_COMPANIES.forEach(comp => {
@@ -434,25 +479,33 @@ export default function App() {
               batch.set(docRef, { ...comp, createdAt: serverTimestamp() });
             });
             await batch.commit();
-            console.log("Default companies added");
-          } catch (e) {
-            console.error("Failed to add default companies", e);
-          }
-        } else if (loadedCompanies.length > 0) {
-          isCompanyLoaded.current = true;
+          } catch (e) { console.error(e); }
+        } else {
+          isCompanyChecked.current = true;
         }
       }
     );
 
-    // 3. Profile (Singleton)
+    // 3. Profile (Singleton) & Default Injection
     const subProf = onSnapshot(
       query(collection(db, 'artifacts', appId, 'users', user.uid, 'profiles'), firestoreLimit(1)),
-      (snapshot) => {
-         if (!snapshot.empty) {
+      async (snapshot) => {
+         if (snapshot.empty) {
+           if (!isProfileLoaded.current) {
+             isProfileLoaded.current = true;
+             try {
+               // Create Default Profile
+               await addDoc(collection(db, 'artifacts', appId, 'users', user.uid, 'profiles'), {
+                 ...DEFAULT_PROFILE,
+                 createdAt: serverTimestamp()
+               });
+             } catch (e) { console.error(e); }
+           }
+           setProfile(null);
+         } else {
            const docData = snapshot.docs[0];
            
-           // Check if data is array-based (new version) or string-based (old version)
-           // Convert old string data to array if necessary for compatibility
+           // Data migration (String -> Array)
            const newData = { ...docData.data() };
            PROFILE_FIELDS.forEach(field => {
              if (typeof newData[field.id] === 'string') {
@@ -468,16 +521,31 @@ export default function App() {
              setProfForm(newData);
              isProfileLoaded.current = true;
            }
-         } else {
-           setProfile(null);
          }
        }
     );
 
-    // 4. Styles
+    // 4. Styles & Default Injection
     const subStyle = onSnapshot(
       query(collection(db, 'artifacts', appId, 'users', user.uid, 'styles'), orderBy('createdAt', 'desc')),
-      (snapshot) => setStyles(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })))
+      async (snapshot) => {
+        const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        setStyles(data);
+
+        if (data.length === 0 && !isStyleChecked.current) {
+          isStyleChecked.current = true;
+          try {
+            const batch = writeBatch(db);
+            DEFAULT_STYLES.forEach(style => {
+              const docRef = doc(collection(db, 'artifacts', appId, 'users', user.uid, 'styles'));
+              batch.set(docRef, { ...style, createdAt: serverTimestamp() });
+            });
+            await batch.commit();
+          } catch (e) { console.error(e); }
+        } else {
+          isStyleChecked.current = true;
+        }
+      }
     );
 
     return () => {
@@ -690,6 +758,7 @@ ${selStyle ? `[Tone]: ${selStyle.tone} / [Focus]: ${selStyle.focus}` : '기본 �
       {/* Tutorial Overlay */}
       {tutorialStep > 0 && (
         <div className="fixed inset-0 bg-black/70 z-50 cursor-pointer animate-in fade-in duration-300" onClick={nextTutorial}>
+          {/* Step 1 Instructions */}
           {tutorialStep === 1 && (
             <div className="absolute left-[280px] top-[40%] text-white animate-bounce-x">
               <div className="flex items-center gap-4">
@@ -767,7 +836,8 @@ ${selStyle ? `[Tone]: ${selStyle.tone} / [Focus]: ${selStyle.focus}` : '기본 �
           {/* Generator Tab */}
           {activeTab === TABS.GENERATOR && (
             <div className="flex gap-6 h-full">
-              <div className="w-1/3 flex flex-col gap-6 overflow-y-auto pr-2 custom-scrollbar">
+              {/* Left Side: Expanded from w-1/3 to w-7/12 */}
+              <div className="w-7/12 flex flex-col gap-6 overflow-y-auto pr-2 custom-scrollbar">
                  <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200 space-y-6">
                     <div>
                       <label className="block text-xs font-bold text-gray-500 mb-1">질문 유형 / 글자수</label>
@@ -855,7 +925,8 @@ ${selStyle ? `[Tone]: ${selStyle.tone} / [Focus]: ${selStyle.focus}` : '기본 �
                     <Button className="w-full" onClick={generatePrompt} disabled={savingTarget === 'generator'} icon={Sparkles}>프롬프트 생성</Button>
                  </div>
               </div>
-              <div className="w-2/3 bg-slate-900 rounded-xl p-6 text-slate-200 overflow-y-auto whitespace-pre-wrap font-mono text-sm border border-slate-700">
+              {/* Right Side: Shrunk from w-2/3 to w-5/12 */}
+              <div className="w-5/12 bg-slate-900 rounded-xl p-6 text-slate-200 overflow-y-auto whitespace-pre-wrap font-mono text-sm border border-slate-700">
                  {generatedPrompt || "좌측에서 재료를 선택하여 프롬프트를 생성하세요."}
               </div>
             </div>
