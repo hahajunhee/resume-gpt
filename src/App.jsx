@@ -1018,9 +1018,9 @@ ${selStyle ? `[Tone]: ${selStyle.tone} / [Focus]: ${selStyle.focus}` : '기본 �
                      )}
                   </div>
                </div>
-               <div className="flex flex-col h-full overflow-hidden order-2 lg:order-none">
+               <div className="flex flex-col h-auto lg:h-full lg:overflow-hidden order-2 lg:order-none mt-8 lg:mt-0">
                   <h3 className="font-bold text-gray-700 mb-4">목록 ({experiences.length})</h3>
-                  <div className="grid gap-4 overflow-y-auto pb-10 pr-2 custom-scrollbar h-full">
+                  <div className="grid gap-4 pb-24 lg:pb-10 pr-2 custom-scrollbar lg:overflow-y-auto h-auto lg:h-full">
                      {experiences.map(e => (
                         <Card key={e.id} title={e.title} onDelete={()=>handleDelete('experiences', e.id)} onEdit={()=>handleEdit('experiences', e, setExpForm)} 
                               expandedContent={<div className="space-y-2 text-sm">{EXP_QUESTIONS.slice(1).map(q => e[q.id] && <div key={q.id}><strong className="text-xs text-gray-500">{q.label}</strong><p>{e[q.id]}</p></div>)}</div>}>
@@ -1055,9 +1055,9 @@ ${selStyle ? `[Tone]: ${selStyle.tone} / [Focus]: ${selStyle.focus}` : '기본 �
                      )}
                    </div>
                 </div>
-                <div className="flex flex-col h-full overflow-hidden order-2 lg:order-none">
+                <div className="flex flex-col h-auto lg:h-full lg:overflow-hidden order-2 lg:order-none mt-8 lg:mt-0">
                    <h3 className="font-bold text-gray-700 mb-4">목록 ({companies.length})</h3>
-                   <div className="grid gap-4 overflow-y-auto pb-10 pr-2 custom-scrollbar h-full">
+                   <div className="grid gap-4 pb-24 lg:pb-10 pr-2 custom-scrollbar lg:overflow-y-auto h-auto lg:h-full">
                       {companies.map(c => (
                          <Card key={c.id} title={`${c.name} (${c.role})`} onDelete={()=>handleDelete('companies', c.id)} onEdit={()=>handleEdit('companies', c, setCompForm)}
                                expandedContent={<div className="space-y-2 text-sm">{COMP_FIELDS.slice(2).map(f => c[f.id] && <div key={f.id}><strong className="text-xs text-gray-500">{f.label}</strong><p>{c[f.id]}</p></div>)}</div>}>
@@ -1119,10 +1119,12 @@ ${selStyle ? `[Tone]: ${selStyle.tone} / [Focus]: ${selStyle.focus}` : '기본 �
                         </div>
                      )}
                 </div>
-                <div className="overflow-y-auto pr-2 custom-scrollbar h-full order-2 lg:order-none">
-                   {styles.map(s => (
-                      <Card key={s.id} title={s.tone} onDelete={()=>handleDelete('styles', s.id)}><p>초점: {s.focus}</p></Card>
-                   ))}
+                <div className="flex flex-col h-auto lg:h-full lg:overflow-hidden order-2 lg:order-none mt-8 lg:mt-0">
+                   <div className="grid gap-4 pb-24 lg:pb-10 pr-2 custom-scrollbar lg:overflow-y-auto h-auto lg:h-full">
+                      {styles.map(s => (
+                         <Card key={s.id} title={s.tone} onDelete={()=>handleDelete('styles', s.id)}><p>초점: {s.focus}</p></Card>
+                      ))}
+                   </div>
                 </div>
              </div>
           )}
