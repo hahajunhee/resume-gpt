@@ -9,11 +9,11 @@ import {
   onAuthStateChanged 
 } from 'firebase/auth';
 import { 
-  getFirestore, collection, doc, addDoc, updateDoc, deleteDoc, onSnapshot, query, orderBy, serverTimestamp, limit as firestoreLimit 
+  getFirestore, collection, doc, addDoc, updateDoc, deleteDoc, onSnapshot, query, orderBy, serverTimestamp, limit as firestoreLimit, writeBatch 
 } from 'firebase/firestore';
 import { 
   Save, Trash2, Copy, FileText, Briefcase, User, PenTool, Layout, 
-  Database, Sparkles, Edit2, ChevronDown, ChevronUp, CheckSquare, Square, XCircle, LogOut, Lock, Mail, AlertCircle, CheckCircle2, ArrowLeft
+  Database, Sparkles, Edit2, ChevronDown, ChevronUp, CheckSquare, Square, XCircle, LogOut, Lock, Mail, AlertCircle, CheckCircle2, ArrowLeft, Plus, Minus
 } from 'lucide-react';
 
 // --- [중요] Firebase Configuration ---
@@ -83,6 +83,46 @@ const PROFILE_FIELDS = [
   { id: 'goals', label: '⑤ 장래 목표' }
 ];
 
+// --- Default Companies Data ---
+const DEFAULT_COMPANIES = [
+  {
+    name: "삼성전자",
+    role: "미정",
+    vision: "미래 사회에 영감을 주고 새로운 미래를 창조한다. (AI, 6G, 로봇 등 미래 신기술 선도)",
+    business: "반도체(DS), 스마트폰(DX), 가전 / 최근 'AI 가전'과 '파운드리 초격차'에 집중",
+    talent: "열정, 창의혁신, 인간미, 도덕성",
+    jd_rnr: "1. 제품/서비스 기획 및 개발 2. 데이터 기반 시장 분석 3. 글로벌 공급망 관리",
+    jd_skills: "Hard: 데이터 분석, 프로그래밍 / Soft: 협업, 창의적 문제해결",
+    core_role_1: "초격차 기술 확보를 위한 R&D",
+    core_role_2: "고객 경험(CX) 혁신",
+    market_issue: "AI 반도체 시장의 급성장과 HBM 기술 경쟁 심화"
+  },
+  {
+    name: "현대자동차",
+    role: "미정",
+    vision: "Progress for Humanity (인류를 위한 진보) / 스마트 모빌리티 솔루션 프로바이더",
+    business: "전기차(EV), 수소차, UAM(도심항공모빌리티), 로보틱스 / SDV(소프트웨어 중심 자동차) 전환 집중",
+    talent: "도전적 실행, 소통과 협력, 고객 최우선",
+    jd_rnr: "1. 모빌리티 서비스 기획 2. 전동화 부품 설계 및 개발 3. 글로벌 생산 운영 최적화",
+    jd_skills: "Hard: 기구 설계, SW 아키텍처 / Soft: 유연한 사고, 글로벌 마인드",
+    core_role_1: "전동화(Electrification) 전환 가속화",
+    core_role_2: "소프트웨어 기술 내재화",
+    market_issue: "글로벌 전기차 수요 둔화(Chasm) 극복 및 하이브리드 전략 병행"
+  },
+  {
+    name: "LG",
+    role: "미정",
+    vision: "고객의 삶을 더 가치 있게 만드는 기업 / 'Smart Life Solution' 기업으로 도약",
+    business: "가전, 전장부품(VS), 디스플레이, 배터리 / 최근 '전장 사업'과 'B2B 솔루션' 확장 집중",
+    talent: "LG Way (고객가치 창조, 인간존중의 경영) / 집요함, 전문성",
+    jd_rnr: "1. 고객 Pain Point 발굴 및 솔루션 제안 2. 신규 사업 모델 발굴 3. 품질 경영 프로세스 관리",
+    jd_skills: "Hard: 회로 설계, 마케팅 전략 / Soft: 고객 공감 능력, 끈기",
+    core_role_1: "1등 DNA를 바탕으로 한 시장 선도",
+    core_role_2: "디지털 전환(DX)을 통한 업무 혁신",
+    market_issue: "가전 시장의 포화와 구독 경제(구독 가전) 모델의 부상"
+  }
+];
+
 // --- Components ---
 
 const Button = ({ children, onClick, variant = 'primary', className = '', icon: Icon, disabled, type = "button" }) => {
@@ -122,6 +162,57 @@ const InputField = ({ label, value, onChange, placeholder, multiline = false }) 
     )}
   </div>
 );
+
+// New Component for Multi-value Input
+const MultiValueInput = ({ label, items = [], onChange, placeholder }) => {
+  const [inputValue, setInputValue] = useState('');
+
+  const handleAdd = () => {
+    if (!inputValue.trim()) return;
+    onChange([...items, inputValue.trim()]);
+    setInputValue('');
+  };
+
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      handleAdd();
+    }
+  };
+
+  const handleRemove = (index) => {
+    const newItems = items.filter((_, i) => i !== index);
+    onChange(newItems);
+  };
+
+  return (
+    <div className="mb-6">
+      <label className="block text-sm font-semibold text-gray-700 mb-1">{label}</label>
+      <div className="flex gap-2 mb-2">
+        <input
+          type="text"
+          className="flex-1 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          value={inputValue}
+          onChange={(e) => setInputValue(e.target.value)}
+          onKeyDown={handleKeyDown}
+          placeholder={placeholder}
+        />
+        <Button onClick={handleAdd} variant="secondary" icon={Plus}>추가</Button>
+      </div>
+      <div className="space-y-2">
+        {items.map((item, idx) => (
+          <div key={idx} className="flex items-center justify-between bg-gray-50 p-3 rounded-lg border border-gray-100 group hover:border-blue-200 transition-colors">
+            <span className="text-sm text-gray-700">{item}</span>
+            <button onClick={() => handleRemove(idx)} className="text-gray-400 hover:text-red-500 p-1">
+              <Trash2 size={16} />
+            </button>
+          </div>
+        ))}
+        {items.length === 0 && <p className="text-xs text-gray-400 ml-1">등록된 항목이 없습니다.</p>}
+      </div>
+    </div>
+  );
+};
 
 const Card = ({ title, children, onDelete, onEdit, expandedContent }) => {
   const [isExpanded, setIsExpanded] = useState(false);
@@ -267,9 +358,7 @@ export default function App() {
   const [user, setUser] = useState(null);
   const [activeTab, setActiveTab] = useState(TABS.GENERATOR);
   
-  // Tutorial State: 0=None, 1=DataTabs, 2=Generator
   const [tutorialStep, setTutorialStep] = useState(0);
-
   const [savingTarget, setSavingTarget] = useState(null);
   const [statusMsg, setStatusMsg] = useState(null); 
   const [editMode, setEditMode] = useState({ active: false, id: null, collection: null });
@@ -287,15 +376,22 @@ export default function App() {
   const [compForm, setCompForm] = useState(
     COMP_FIELDS.reduce((acc, cur) => ({ ...acc, [cur.id]: '' }), {})
   );
-  const [profForm, setProfForm] = useState({ strength: '', keywords: '', experienceList: '', values: '', goals: '' });
+  // [Updated] Profile Form now stores arrays for each field
+  const [profForm, setProfForm] = useState({ 
+    strength: [], keywords: [], experienceList: [], values: [], goals: [] 
+  });
   const [styleForm, setStyleForm] = useState({ tone: '', focus: '' });
 
   // Flags
   const isProfileLoaded = useRef(false);
+  const isCompanyLoaded = useRef(false); // Flag to check if default companies should be added
 
   // Generator Selections
+  // [Updated] profDetail stores selected string items for each category
   const [selections, setSelections] = useState({
-    expIds: [], compId: '', compFields: {}, profFields: {}, styleId: '', qType: '지원동기', limit: '900'
+    expIds: [], compId: '', compFields: {}, 
+    profDetail: { strength: [], keywords: [], experienceList: [], values: [], goals: [] }, 
+    styleId: '', qType: '지원동기', limit: '900'
   });
   
   const [generatedPrompt, setGeneratedPrompt] = useState('');
@@ -305,7 +401,6 @@ export default function App() {
     if (!auth) return;
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser);
-      // [수정] 로컬스토리지 체크 제거 -> 로그인할 때마다 튜토리얼 1단계 시작
       if (currentUser) {
         setTutorialStep(1);
       }
@@ -316,53 +411,87 @@ export default function App() {
   useEffect(() => {
     if (!user || !db) return;
     
-    const subList = (colName, setter) => {
-      const q = query(collection(db, 'artifacts', appId, 'users', user.uid, colName), orderBy('createdAt', 'desc'));
-      return onSnapshot(q, (snapshot) => {
-        setter(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
-      }, (err) => console.error("Listener Error:", err));
-    };
+    // 1. Experiences
+    const subExp = onSnapshot(
+      query(collection(db, 'artifacts', appId, 'users', user.uid, 'experiences'), orderBy('createdAt', 'desc')),
+      (snapshot) => setExperiences(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })))
+    );
 
-    const subProfile = () => {
-       const q = query(collection(db, 'artifacts', appId, 'users', user.uid, 'profiles'), firestoreLimit(1));
-       return onSnapshot(q, (snapshot) => {
+    // 2. Companies & Default Data Injection
+    const subComp = onSnapshot(
+      query(collection(db, 'artifacts', appId, 'users', user.uid, 'companies'), orderBy('createdAt', 'desc')),
+      async (snapshot) => {
+        const loadedCompanies = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        setCompanies(loadedCompanies);
+
+        // Add default companies if list is empty (only once per session load)
+        if (loadedCompanies.length === 0 && !isCompanyLoaded.current) {
+          isCompanyLoaded.current = true; // Prevent infinite loop or double addition
+          try {
+            const batch = writeBatch(db);
+            DEFAULT_COMPANIES.forEach(comp => {
+              const docRef = doc(collection(db, 'artifacts', appId, 'users', user.uid, 'companies'));
+              batch.set(docRef, { ...comp, createdAt: serverTimestamp() });
+            });
+            await batch.commit();
+            console.log("Default companies added");
+          } catch (e) {
+            console.error("Failed to add default companies", e);
+          }
+        } else if (loadedCompanies.length > 0) {
+          isCompanyLoaded.current = true;
+        }
+      }
+    );
+
+    // 3. Profile (Singleton)
+    const subProf = onSnapshot(
+      query(collection(db, 'artifacts', appId, 'users', user.uid, 'profiles'), firestoreLimit(1)),
+      (snapshot) => {
          if (!snapshot.empty) {
            const docData = snapshot.docs[0];
            setProfile({ id: docData.id, ...docData.data() });
+           
+           // Check if data is array-based (new version) or string-based (old version)
+           // Convert old string data to array if necessary for compatibility
+           const newData = { ...docData.data() };
+           PROFILE_FIELDS.forEach(field => {
+             if (typeof newData[field.id] === 'string') {
+                newData[field.id] = newData[field.id] ? [newData[field.id]] : [];
+             } else if (!newData[field.id]) {
+                newData[field.id] = [];
+             }
+           });
+
            if (!isProfileLoaded.current) {
-             setProfForm(prev => ({ ...prev, ...docData.data() }));
+             setProfForm(newData);
              isProfileLoaded.current = true;
            }
          } else {
            setProfile(null);
          }
-       }, (err) => console.error("Profile Listener Error:", err));
-    };
+       }
+    );
 
-    const unsubExp = subList('experiences', setExperiences);
-    const unsubComp = subList('companies', setCompanies);
-    const unsubProf = subProfile();
-    const unsubStyle = subList('styles', setStyles);
+    // 4. Styles
+    const subStyle = onSnapshot(
+      query(collection(db, 'artifacts', appId, 'users', user.uid, 'styles'), orderBy('createdAt', 'desc')),
+      (snapshot) => setStyles(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })))
+    );
 
     return () => {
-      unsubExp(); unsubComp(); unsubProf(); unsubStyle();
+      subExp(); subComp(); subProf(); subStyle();
     };
   }, [user]);
 
   // --- Tutorial Helpers ---
   const nextTutorial = () => {
-    if (tutorialStep === 1) {
-      setTutorialStep(2);
-    } else {
-      finishTutorial();
-    }
+    if (tutorialStep === 1) setTutorialStep(2);
+    else finishTutorial();
   };
 
-  const finishTutorial = () => {
-    setTutorialStep(0);
-  };
+  const finishTutorial = () => setTutorialStep(0);
 
-  // --- Helper: Status Message ---
   const showStatus = (type, text) => {
     setStatusMsg({ type, text });
     setTimeout(() => setStatusMsg(null), 5000);
@@ -390,7 +519,7 @@ export default function App() {
       if (clearFn) clearFn(); 
     } catch (error) {
       console.error("Error saving:", error);
-      alert(`[저장 실패] 오류 내용: ${error.message}\n\n파이어베이스 콘솔의 Rules 설정을 확인해주세요!`);
+      alert(`[저장 실패] 오류 내용: ${error.message}`);
     } finally {
       setSavingTarget(null);
     }
@@ -410,7 +539,7 @@ export default function App() {
       alert('나의 정보가 업데이트되었습니다!');
     } catch (error) {
        console.error("Profile Save Error:", error);
-       alert(`[저장 실패] 오류 내용: ${error.message}\n\n파이어베이스 콘솔의 Rules 설정을 확인해주세요!`);
+       alert(`[저장 실패] 오류 내용: ${error.message}`);
     } finally {
       setSavingTarget(null);
     }
@@ -447,6 +576,21 @@ export default function App() {
     }
   };
 
+  // --- Generator Helpers ---
+  const toggleProfileItem = (fieldId, itemText) => {
+    setSelections(prev => {
+      const currentList = prev.profDetail[fieldId] || [];
+      const exists = currentList.includes(itemText);
+      return {
+        ...prev,
+        profDetail: {
+          ...prev.profDetail,
+          [fieldId]: exists ? currentList.filter(t => t !== itemText) : [...currentList, itemText]
+        }
+      };
+    });
+  };
+
   // --- Generator Logic ---
   const generatePrompt = () => {
     if (selections.expIds.length === 0) return alert("최소 1개 이상의 경험을 선택해주세요.");
@@ -463,14 +607,17 @@ export default function App() {
        }
     });
 
+    // Build Profile Info (Selected Items Only)
     let profInfoStr = "";
-    if (profile) {
-      PROFILE_FIELDS.forEach(field => {
-        if (selections.profFields[field.id]) {
-          profInfoStr += `- ${field.label}: ${profile[field.id]}\n`;
-        }
-      });
-    }
+    let hasProfData = false;
+    PROFILE_FIELDS.forEach(field => {
+      const selectedItems = selections.profDetail[field.id] || [];
+      if (selectedItems.length > 0) {
+        hasProfData = true;
+        profInfoStr += `- ${field.label}: ${selectedItems.join(', ')}\n`;
+      }
+    });
+    if (!hasProfData) profInfoStr = "(선택된 정보 없음)";
 
     let expInfoStr = "";
     selExps.forEach((exp, index) => {
@@ -495,7 +642,7 @@ ${selections.qType.includes('지원동기') ? `지원동기 문항은 [회사 �
 ${compInfoStr}
 
 2-3) 지원자 추가 정보
-${profInfoStr || "(선택된 정보 없음)"}
+${profInfoStr}
 
 2-4) 지원자 핵심 경험 상세
 ${expInfoStr}
@@ -542,7 +689,6 @@ ${selStyle ? `[Tone]: ${selStyle.tone} / [Focus]: ${selStyle.focus}` : '기본 �
       {/* Tutorial Overlay */}
       {tutorialStep > 0 && (
         <div className="fixed inset-0 bg-black/70 z-50 cursor-pointer animate-in fade-in duration-300" onClick={nextTutorial}>
-          {/* Step 1 Instructions */}
           {tutorialStep === 1 && (
             <div className="absolute left-[280px] top-[40%] text-white animate-bounce-x">
               <div className="flex items-center gap-4">
@@ -555,8 +701,6 @@ ${selStyle ? `[Tone]: ${selStyle.tone} / [Focus]: ${selStyle.focus}` : '기본 �
               </div>
             </div>
           )}
-
-          {/* Step 2 Instructions - [수정] 위치를 top-24에서 top-14로 올려서 화살표가 버튼을 더 정확히 가리키도록 함 */}
           {tutorialStep === 2 && (
             <div className="absolute left-[280px] top-14 text-white">
               <div className="flex items-center gap-4">
@@ -577,7 +721,7 @@ ${selStyle ? `[Tone]: ${selStyle.tone} / [Focus]: ${selStyle.focus}` : '기본 �
         </div>
       )}
 
-      {/* Sidebar - [수정] 튜토리얼 중일 때는 z-10 제한을 풀어서(z-auto) 자식 요소가 z-50 오버레이 위로 올라오게 함 */}
+      {/* Sidebar */}
       <div className={`w-64 bg-white border-r border-gray-200 flex flex-col shadow-lg relative ${tutorialStep > 0 ? 'z-auto' : 'z-10'}`}>
         <div className="p-6 border-b border-gray-100">
           <div className="flex items-center gap-2 text-blue-700 font-bold text-xl">
@@ -585,14 +729,12 @@ ${selStyle ? `[Tone]: ${selStyle.tone} / [Focus]: ${selStyle.focus}` : '기본 �
           </div>
         </div>
         <nav className="flex-1 p-4 overflow-y-auto">
-          {/* Generator Tab with Highlight */}
           <div className={tutorialStep === 2 ? "relative z-[60]" : ""}>
              <NavItem id={TABS.GENERATOR} icon={Layout} label="프롬프트 생성기" highlighted={tutorialStep === 2} />
           </div>
           
           <div className="text-xs font-bold text-gray-400 mt-6 mb-2 px-4 uppercase">데이터 관리</div>
           
-          {/* Data Tabs with Highlight Group */}
           <div className={`transition-all duration-300 ${tutorialStep === 1 ? 'relative z-[60] bg-white p-2 -m-2 rounded-xl ring-4 ring-yellow-400 shadow-2xl' : ''}`}>
             <NavItem id={TABS.EXPERIENCE} icon={FileText} label="1. 경험 (Experience)" />
             <NavItem id={TABS.COMPANY} icon={Briefcase} label="2. 기업 (Company)" />
@@ -674,16 +816,28 @@ ${selStyle ? `[Tone]: ${selStyle.tone} / [Focus]: ${selStyle.focus}` : '기본 �
 
                     <div>
                        <label className="block text-sm font-bold text-gray-700 mb-2">내 정보 포함</label>
-                       <div className="bg-gray-50 p-2 rounded space-y-1">
-                          {PROFILE_FIELDS.map(f => (
-                             <label key={f.id} className="flex items-start gap-2 text-xs cursor-pointer p-1 hover:bg-white rounded">
-                                <input type="checkbox" className="mt-1" checked={!!selections.profFields[f.id]} onChange={() => setSelections(p => ({...p, profFields: {...p.profFields, [f.id]: !p.profFields[f.id]}}))} />
-                                <div>
-                                  <span className="font-bold block text-gray-700">{f.label}</span>
-                                  <span className="text-gray-500 block leading-tight">{profile?.[f.id] || '(내용 없음)'}</span>
-                                </div>
-                             </label>
-                          ))}
+                       <div className="bg-gray-50 p-2 rounded space-y-2">
+                          {PROFILE_FIELDS.map(f => {
+                             const savedItems = profile?.[f.id] || [];
+                             return (
+                               <div key={f.id}>
+                                  <p className="text-xs font-bold text-gray-500 mb-1">{f.label}</p>
+                                  {savedItems.length > 0 ? (
+                                    <div className="flex flex-wrap gap-2">
+                                      {savedItems.map((item, idx) => (
+                                        <label key={idx} className={`flex items-center gap-1 text-xs px-2 py-1 rounded cursor-pointer border ${selections.profDetail[f.id]?.includes(item) ? 'bg-blue-100 border-blue-300 text-blue-800' : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-100'}`}>
+                                           <input type="checkbox" className="hidden" checked={selections.profDetail[f.id]?.includes(item)} onChange={() => toggleProfileItem(f.id, item)} />
+                                           {selections.profDetail[f.id]?.includes(item) ? <CheckCircle2 size={12}/> : <Square size={12}/>}
+                                           {item}
+                                        </label>
+                                      ))}
+                                    </div>
+                                  ) : (
+                                    <p className="text-xs text-gray-400 pl-1">(작성된 항목 없음)</p>
+                                  )}
+                               </div>
+                             )
+                          })}
                        </div>
                     </div>
 
@@ -786,20 +940,28 @@ ${selStyle ? `[Tone]: ${selStyle.tone} / [Focus]: ${selStyle.focus}` : '기본 �
              <div className="max-w-3xl mx-auto h-full overflow-y-auto custom-scrollbar p-1">
                 <div className="bg-white p-8 rounded-xl border border-gray-200">
                    <h3 className="font-bold text-xl mb-6 text-blue-800 flex items-center gap-2"><User size={24}/> 나의 정보 관리 (자동 저장 아님)</h3>
-                   <div className="space-y-5">
+                   <div className="space-y-8">
                       {PROFILE_FIELDS.map(f => (
-                         <InputField key={f.id} label={f.label} value={profForm[f.id]} onChange={v => setProfForm(p => ({...p, [f.id]:v}))} multiline />
+                         <MultiValueInput 
+                            key={f.id} 
+                            label={f.label} 
+                            items={profForm[f.id] || []} 
+                            onChange={newItems => setProfForm(prev => ({ ...prev, [f.id]: newItems }))}
+                            placeholder={`${f.label.split(' ').slice(1).join(' ')} 입력 후 Enter 또는 추가 버튼`}
+                         />
                       ))}
-                      <Button className="w-full py-3 mt-4" onClick={handleSaveProfile} disabled={savingTarget === 'profile'} icon={Save}>
-                         {savingTarget === 'profile' ? '저장 중...' : (profile ? '정보 업데이트' : '정보 저장')}
-                      </Button>
-                      {statusMsg && (
-                        <div className={`p-3 rounded text-sm flex items-center gap-2 ${statusMsg.type === 'success' ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'}`}>
-                           {statusMsg.type === 'success' ? <CheckCircle2 size={16}/> : <AlertCircle size={16}/>}
-                           {statusMsg.text}
-                        </div>
-                     )}
-                      <p className="text-xs text-gray-400 text-center">* 작성 후 반드시 저장 버튼을 눌러주세요.</p>
+                      <div className="pt-4 border-t">
+                        <Button className="w-full py-3" onClick={handleSaveProfile} disabled={savingTarget === 'profile'} icon={Save}>
+                           {savingTarget === 'profile' ? '저장 중...' : (profile ? '정보 업데이트' : '정보 저장')}
+                        </Button>
+                        {statusMsg && (
+                          <div className={`p-3 rounded text-sm flex items-center gap-2 mt-2 ${statusMsg.type === 'success' ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'}`}>
+                             {statusMsg.type === 'success' ? <CheckCircle2 size={16}/> : <AlertCircle size={16}/>}
+                             {statusMsg.text}
+                          </div>
+                       )}
+                        <p className="text-xs text-gray-400 text-center mt-2">* 작성 후 반드시 저장 버튼을 눌러주세요.</p>
+                      </div>
                    </div>
                 </div>
              </div>
