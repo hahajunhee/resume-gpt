@@ -85,7 +85,6 @@ const PROFILE_FIELDS = [
 
 // --- Components ---
 
-// Button: Added type="button" to prevent form submission refreshing
 const Button = ({ children, onClick, variant = 'primary', className = '', icon: Icon, disabled, type = "button" }) => {
   const baseStyle = "px-4 py-2 rounded-lg font-medium transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed";
   const variants = {
@@ -268,8 +267,7 @@ export default function App() {
   const [user, setUser] = useState(null);
   const [activeTab, setActiveTab] = useState(TABS.GENERATOR);
   
-  // [Fix] Replaced global 'loading' with scoped 'savingTarget'
-  const [savingTarget, setSavingTarget] = useState(null); // 'experience' | 'company' | 'profile' | 'style' | null
+  const [savingTarget, setSavingTarget] = useState(null);
   const [statusMsg, setStatusMsg] = useState(null); 
   const [editMode, setEditMode] = useState({ active: false, id: null, collection: null });
 
@@ -345,16 +343,15 @@ export default function App() {
   // --- Helper: Status Message ---
   const showStatus = (type, text) => {
     setStatusMsg({ type, text });
-    setTimeout(() => setStatusMsg(null), 3000);
+    setTimeout(() => setStatusMsg(null), 5000);
   };
 
-  // --- CRUD Operations ---
-  // [Fix] handleSave now accepts a targetName to lock only specific section
+  // --- CRUD Operations (Debug Version) ---
   const handleSave = async (targetName, colName, data, clearFn) => {
-    if (!user) return;
-    if (savingTarget) return; // Prevent double click global check (optional) or scoped
+    if (!user) return alert("로그인이 필요합니다.");
+    if (savingTarget) return;
 
-    setSavingTarget(targetName); // Lock specific target
+    setSavingTarget(targetName); 
     setStatusMsg(null);
     
     try {
@@ -363,22 +360,22 @@ export default function App() {
       if (editMode.active && editMode.collection === colName) {
         await updateDoc(doc(colRef, editMode.id), { ...data, updatedAt: serverTimestamp() });
         setEditMode({ active: false, id: null, collection: null });
-        showStatus('success', '수정이 완료되었습니다.');
+        alert('수정이 완료되었습니다!'); 
       } else {
         await addDoc(colRef, { ...data, createdAt: serverTimestamp() });
-        showStatus('success', '저장이 완료되었습니다.');
+        alert('저장이 완료되었습니다!'); 
       }
       if (clearFn) clearFn(); 
     } catch (error) {
       console.error("Error saving:", error);
-      showStatus('error', `저장 실패: ${error.message}`);
+      alert(`[저장 실패] 오류 내용: ${error.message}\n\n파이어베이스 콘솔의 Rules 설정을 확인해주세요!`);
     } finally {
-      setSavingTarget(null); // Release lock guaranteed
+      setSavingTarget(null);
     }
   };
 
   const handleSaveProfile = async () => {
-    if (!user) return;
+    if (!user) return alert("로그인이 필요합니다.");
     setSavingTarget('profile');
     setStatusMsg(null);
     try {
@@ -388,10 +385,10 @@ export default function App() {
       } else {
         await addDoc(colRef, { ...profForm, createdAt: serverTimestamp() });
       }
-      showStatus('success', '나의 정보가 업데이트되었습니다.');
+      alert('나의 정보가 업데이트되었습니다!');
     } catch (error) {
        console.error("Profile Save Error:", error);
-       showStatus('error', `저장 실패: ${error.message}`);
+       alert(`[저장 실패] 오류 내용: ${error.message}\n\n파이어베이스 콘솔의 Rules 설정을 확인해주세요!`);
     } finally {
       setSavingTarget(null);
     }
@@ -422,7 +419,10 @@ export default function App() {
     if (!confirm('정말 삭제하시겠습니까?')) return;
     try {
       await deleteDoc(doc(db, 'artifacts', appId, 'users', user.uid, colName, id));
-    } catch (e) { console.error(e); }
+    } catch (e) { 
+      console.error(e);
+      alert('삭제 실패: ' + e.message);
+    }
   };
 
   // --- Generator Logic ---
@@ -569,9 +569,12 @@ ${selStyle ? `[Tone]: ${selStyle.tone} / [Focus]: ${selStyle.focus}` : '기본 �
                                const c = companies.find(x=>x.id===selections.compId);
                                if(!c?.[f.id]) return null;
                                return (
-                                 <label key={f.id} className="flex items-center gap-2 text-xs cursor-pointer">
-                                    <input type="checkbox" checked={!!selections.compFields[f.id]} onChange={() => setSelections(p => ({...p, compFields: {...p.compFields, [f.id]: !p.compFields[f.id]}}))} />
-                                    <span className="truncate">{f.label.split('?')[0]}</span>
+                                 <label key={f.id} className="flex items-start gap-2 text-xs cursor-pointer p-1 hover:bg-white rounded">
+                                    <input type="checkbox" className="mt-1" checked={!!selections.compFields[f.id]} onChange={() => setSelections(p => ({...p, compFields: {...p.compFields, [f.id]: !p.compFields[f.id]}}))} />
+                                    <div>
+                                      <span className="font-bold block text-gray-700">{f.label.split('?')[0]}</span>
+                                      <span className="text-gray-500 block leading-tight">{c[f.id]}</span>
+                                    </div>
                                  </label>
                                )
                             })}
@@ -595,12 +598,25 @@ ${selStyle ? `[Tone]: ${selStyle.tone} / [Focus]: ${selStyle.focus}` : '기본 �
                        <label className="block text-sm font-bold text-gray-700 mb-2">내 정보 포함</label>
                        <div className="bg-gray-50 p-2 rounded space-y-1">
                           {PROFILE_FIELDS.map(f => (
-                             <label key={f.id} className="flex items-center gap-2 text-xs cursor-pointer">
-                                <input type="checkbox" checked={!!selections.profFields[f.id]} onChange={() => setSelections(p => ({...p, profFields: {...p.profFields, [f.id]: !p.profFields[f.id]}}))} />
-                                {f.label}
+                             <label key={f.id} className="flex items-start gap-2 text-xs cursor-pointer p-1 hover:bg-white rounded">
+                                <input type="checkbox" className="mt-1" checked={!!selections.profFields[f.id]} onChange={() => setSelections(p => ({...p, profFields: {...p.profFields, [f.id]: !p.profFields[f.id]}}))} />
+                                <div>
+                                  <span className="font-bold block text-gray-700">{f.label}</span>
+                                  <span className="text-gray-500 block leading-tight">{profile?.[f.id] || '(내용 없음)'}</span>
+                                </div>
                              </label>
                           ))}
                        </div>
+                    </div>
+
+                    <div>
+                        <label className="block text-sm font-bold text-gray-700 mb-2">문체 스타일 선택</label>
+                        <select className="w-full p-2 border rounded bg-gray-50" value={selections.styleId} onChange={e => setSelections({...selections, styleId:e.target.value})}>
+                            <option value="">기본 (선택 안 함)</option>
+                            {styles.map(s => (
+                                <option key={s.id} value={s.id}>{s.tone} / {s.focus}</option>
+                            ))}
+                        </select>
                     </div>
                     
                     <Button className="w-full" onClick={generatePrompt} disabled={savingTarget === 'generator'} icon={Sparkles}>프롬프트 생성</Button>
