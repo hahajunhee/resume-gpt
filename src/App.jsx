@@ -13,7 +13,7 @@ import {
 } from 'firebase/firestore';
 import { 
   Save, Trash2, Copy, FileText, Briefcase, User, PenTool, Layout, 
-  Database, Sparkles, Edit2, ChevronDown, ChevronUp, CheckSquare, Square, XCircle, LogOut, Lock, Mail, AlertCircle, CheckCircle2
+  Database, Sparkles, Edit2, ChevronDown, ChevronUp, CheckSquare, Square, XCircle, LogOut, Lock, Mail, AlertCircle, CheckCircle2, ArrowLeft
 } from 'lucide-react';
 
 // --- [중요] Firebase Configuration ---
@@ -267,6 +267,9 @@ export default function App() {
   const [user, setUser] = useState(null);
   const [activeTab, setActiveTab] = useState(TABS.GENERATOR);
   
+  // Tutorial State: 0=None, 1=DataTabs, 2=Generator
+  const [tutorialStep, setTutorialStep] = useState(0);
+
   const [savingTarget, setSavingTarget] = useState(null);
   const [statusMsg, setStatusMsg] = useState(null); 
   const [editMode, setEditMode] = useState({ active: false, id: null, collection: null });
@@ -297,10 +300,19 @@ export default function App() {
   
   const [generatedPrompt, setGeneratedPrompt] = useState('');
 
-  // --- Auth & Data Fetching ---
+  // --- Auth & Data Fetching & Tutorial Check ---
   useEffect(() => {
     if (!auth) return;
-    const unsubscribe = onAuthStateChanged(auth, setUser);
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      setUser(currentUser);
+      if (currentUser) {
+        // Check Tutorial
+        const hasSeen = localStorage.getItem('hasSeenTutorial');
+        if (!hasSeen) {
+          setTutorialStep(1);
+        }
+      }
+    });
     return () => unsubscribe();
   }, []);
 
@@ -340,13 +352,27 @@ export default function App() {
     };
   }, [user]);
 
+  // --- Tutorial Helpers ---
+  const nextTutorial = () => {
+    if (tutorialStep === 1) {
+      setTutorialStep(2);
+    } else {
+      finishTutorial();
+    }
+  };
+
+  const finishTutorial = () => {
+    setTutorialStep(0);
+    localStorage.setItem('hasSeenTutorial', 'true');
+  };
+
   // --- Helper: Status Message ---
   const showStatus = (type, text) => {
     setStatusMsg({ type, text });
     setTimeout(() => setStatusMsg(null), 5000);
   };
 
-  // --- CRUD Operations (Debug Version) ---
+  // --- CRUD Operations ---
   const handleSave = async (targetName, colName, data, clearFn) => {
     if (!user) return alert("로그인이 필요합니다.");
     if (savingTarget) return;
@@ -496,8 +522,17 @@ ${selStyle ? `[Tone]: ${selStyle.tone} / [Focus]: ${selStyle.focus}` : '기본 �
   };
 
   // --- Helper Components ---
-  const NavItem = ({ id, icon: Icon, label }) => (
-    <button onClick={() => { setActiveTab(id); setEditMode({active:false,id:null,collection:null}); }} className={`flex items-center gap-2 px-4 py-3 rounded-lg w-full text-left transition-colors mb-1 ${activeTab === id ? 'bg-blue-600 text-white shadow-md' : 'text-gray-600 hover:bg-blue-50'}`}>
+  const NavItem = ({ id, icon: Icon, label, highlighted }) => (
+    <button 
+      onClick={() => { setActiveTab(id); setEditMode({active:false,id:null,collection:null}); }} 
+      className={`flex items-center gap-2 px-4 py-3 rounded-lg w-full text-left transition-all duration-300 mb-1 ${
+        highlighted 
+          ? 'relative z-[60] bg-white ring-4 ring-yellow-400 shadow-2xl text-blue-700 font-bold scale-105' 
+          : activeTab === id 
+            ? 'bg-blue-600 text-white shadow-md' 
+            : 'text-gray-600 hover:bg-blue-50'
+      }`}
+    >
       <Icon size={20} /> <span className="font-medium">{label}</span>
     </button>
   );
@@ -506,21 +541,68 @@ ${selStyle ? `[Tone]: ${selStyle.tone} / [Focus]: ${selStyle.focus}` : '기본 �
   if (!user) return <AuthScreen />;
 
   return (
-    <div className="flex h-screen bg-gray-100 font-sans overflow-hidden">
+    <div className="flex h-screen bg-gray-100 font-sans overflow-hidden relative">
+      
+      {/* Tutorial Overlay */}
+      {tutorialStep > 0 && (
+        <div className="fixed inset-0 bg-black/70 z-50 cursor-pointer animate-in fade-in duration-300" onClick={nextTutorial}>
+          {/* Step 1 Instructions */}
+          {tutorialStep === 1 && (
+            <div className="absolute left-[280px] top-[40%] text-white animate-bounce-x">
+              <div className="flex items-center gap-4">
+                <ArrowLeft size={48} className="text-yellow-400" />
+                <div>
+                  <h2 className="text-3xl font-bold text-yellow-400 mb-2">1단계: 재료 준비</h2>
+                  <p className="text-xl font-medium">먼저 이 4개 탭에서 <br/>자신의 경험과 기업 정보를 작성해주세요.</p>
+                  <p className="text-sm text-gray-300 mt-2">(화면을 클릭하면 다음으로 넘어갑니다)</p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Step 2 Instructions */}
+          {tutorialStep === 2 && (
+            <div className="absolute left-[280px] top-24 text-white">
+              <div className="flex items-center gap-4">
+                <ArrowLeft size={48} className="text-yellow-400" />
+                <div>
+                  <h2 className="text-3xl font-bold text-yellow-400 mb-2">2단계: 요리하기</h2>
+                  <p className="text-xl font-medium">프롬프트 생성기로 이동하여 <br/>1단계에서 작성한 재료를 조립하세요.</p>
+                  <button 
+                    onClick={(e) => { e.stopPropagation(); finishTutorial(); }}
+                    className="mt-4 bg-yellow-400 text-black font-bold py-2 px-6 rounded-full hover:bg-yellow-300 transition-colors flex items-center gap-2"
+                  >
+                    사용해보러 가기 <ChevronDown className="-rotate-90"/>
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Sidebar */}
-      <div className="w-64 bg-white border-r border-gray-200 flex flex-col shadow-lg z-10">
+      <div className="w-64 bg-white border-r border-gray-200 flex flex-col shadow-lg z-10 relative">
         <div className="p-6 border-b border-gray-100">
           <div className="flex items-center gap-2 text-blue-700 font-bold text-xl">
             <Sparkles className="fill-blue-600" /> <span>자소서 GPT</span>
           </div>
         </div>
         <nav className="flex-1 p-4 overflow-y-auto">
-          <NavItem id={TABS.GENERATOR} icon={Layout} label="프롬프트 생성기" />
+          {/* Generator Tab with Highlight */}
+          <div className={tutorialStep === 2 ? "relative z-[60]" : ""}>
+             <NavItem id={TABS.GENERATOR} icon={Layout} label="프롬프트 생성기" highlighted={tutorialStep === 2} />
+          </div>
+          
           <div className="text-xs font-bold text-gray-400 mt-6 mb-2 px-4 uppercase">데이터 관리</div>
-          <NavItem id={TABS.EXPERIENCE} icon={FileText} label="1. 경험 (Experience)" />
-          <NavItem id={TABS.COMPANY} icon={Briefcase} label="2. 기업 (Company)" />
-          <NavItem id={TABS.PROFILE} icon={User} label="3. 자기 정보 (Me)" />
-          <NavItem id={TABS.STYLE} icon={PenTool} label="4. 문체 (Style)" />
+          
+          {/* Data Tabs with Highlight Group */}
+          <div className={`transition-all duration-300 ${tutorialStep === 1 ? 'relative z-[60] bg-white p-2 -m-2 rounded-xl ring-4 ring-yellow-400 shadow-2xl' : ''}`}>
+            <NavItem id={TABS.EXPERIENCE} icon={FileText} label="1. 경험 (Experience)" />
+            <NavItem id={TABS.COMPANY} icon={Briefcase} label="2. 기업 (Company)" />
+            <NavItem id={TABS.PROFILE} icon={User} label="3. 자기 정보 (Me)" />
+            <NavItem id={TABS.STYLE} icon={PenTool} label="4. 문체 (Style)" />
+          </div>
         </nav>
         <div className="p-4 bg-gray-50 border-t">
            <p className="text-sm font-bold text-gray-700 mb-2 truncate">{user.email}</p>
@@ -710,7 +792,7 @@ ${selStyle ? `[Tone]: ${selStyle.tone} / [Focus]: ${selStyle.focus}` : '기본 �
                    <h3 className="font-bold text-xl mb-6 text-blue-800 flex items-center gap-2"><User size={24}/> 나의 정보 관리 (자동 저장 아님)</h3>
                    <div className="space-y-5">
                       {PROFILE_FIELDS.map(f => (
-                         <InputField key={f.id} label={f.label} value={profForm[f.id]} onChange={v => setProfForm(p => ({...p, [f.id]: v}))} multiline />
+                         <InputField key={f.id} label={f.label} value={profForm[f.id]} onChange={v => setProfForm(p => ({...p, [f.id]:v}))} multiline />
                       ))}
                       <Button className="w-full py-3 mt-4" onClick={handleSaveProfile} disabled={savingTarget === 'profile'} icon={Save}>
                          {savingTarget === 'profile' ? '저장 중...' : (profile ? '정보 업데이트' : '정보 저장')}
