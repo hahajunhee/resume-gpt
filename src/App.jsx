@@ -13,7 +13,7 @@ import {
 } from 'firebase/firestore';
 import { 
   Save, Trash2, Copy, FileText, Briefcase, User, PenTool, Layout, 
-  Database, Sparkles, Edit2, ChevronDown, ChevronUp, CheckSquare, Square, XCircle, LogOut, Lock, Mail, AlertCircle, CheckCircle2, ArrowLeft, Plus, Minus
+  Database, Sparkles, Edit2, ChevronDown, ChevronUp, CheckSquare, Square, XCircle, LogOut, Lock, Mail, AlertCircle, CheckCircle2, ArrowLeft, Plus, Menu, ArrowDown
 } from 'lucide-react';
 
 // --- [중요] Firebase Configuration ---
@@ -155,7 +155,7 @@ const DEFAULT_STYLES = [
 // --- Components ---
 
 const Button = ({ children, onClick, variant = 'primary', className = '', icon: Icon, disabled, type = "button" }) => {
-  const baseStyle = "px-4 py-2 rounded-lg font-medium transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed";
+  const baseStyle = "px-4 py-2 rounded-lg font-medium transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap";
   const variants = {
     primary: "bg-blue-600 text-white hover:bg-blue-700 shadow-sm",
     secondary: "bg-white text-gray-700 border border-gray-200 hover:bg-gray-50",
@@ -192,7 +192,6 @@ const InputField = ({ label, value, onChange, placeholder, multiline = false }) 
   </div>
 );
 
-// New Component for Multi-value Input
 const MultiValueInput = ({ label, items = [], onChange, placeholder }) => {
   const [inputValue, setInputValue] = useState('');
 
@@ -220,7 +219,7 @@ const MultiValueInput = ({ label, items = [], onChange, placeholder }) => {
       <div className="flex gap-2 mb-2">
         <input
           type="text"
-          className="flex-1 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          className="flex-1 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 min-w-0"
           value={inputValue}
           onChange={(e) => setInputValue(e.target.value)}
           onKeyDown={handleKeyDown}
@@ -231,8 +230,8 @@ const MultiValueInput = ({ label, items = [], onChange, placeholder }) => {
       <div className="space-y-2">
         {Array.isArray(items) && items.map((item, idx) => (
           <div key={idx} className="flex items-center justify-between bg-gray-50 p-3 rounded-lg border border-gray-100 group hover:border-blue-200 transition-colors">
-            <span className="text-sm text-gray-700">{item}</span>
-            <button onClick={() => handleRemove(idx)} className="text-gray-400 hover:text-red-500 p-1">
+            <span className="text-sm text-gray-700 break-all">{item}</span>
+            <button onClick={() => handleRemove(idx)} className="text-gray-400 hover:text-red-500 p-1 shrink-0">
               <Trash2 size={16} />
             </button>
           </div>
@@ -249,8 +248,8 @@ const Card = ({ title, children, onDelete, onEdit, expandedContent }) => {
   return (
     <div className="bg-white p-5 rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-shadow relative group">
       <div className="flex justify-between items-start mb-2">
-        <h3 className="font-bold text-lg text-gray-800 flex-1 mr-2">{title}</h3>
-        <div className="flex gap-1 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity">
+        <h3 className="font-bold text-lg text-gray-800 flex-1 mr-2 break-words">{title}</h3>
+        <div className="flex gap-1 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity shrink-0">
           {onEdit && (
             <button onClick={onEdit} className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-md" title="수정">
               <Edit2 size={16} />
@@ -491,14 +490,10 @@ export default function App() {
       query(collection(db, 'artifacts', appId, 'users', user.uid, 'profiles'), firestoreLimit(1)),
       async (snapshot) => {
          if (snapshot.empty) {
-           // [FIX] 데이터가 없을 때: 기본값으로 폼 채우기 + DB 생성
            if (!isProfileLoaded.current) {
              isProfileLoaded.current = true;
-             // 화면에 즉시 반영
              setProfForm(DEFAULT_PROFILE);
              setProfile({ id: 'temp_id', ...DEFAULT_PROFILE });
-
-             // DB 생성
              try {
                await addDoc(collection(db, 'artifacts', appId, 'users', user.uid, 'profiles'), {
                  ...DEFAULT_PROFILE,
@@ -508,7 +503,6 @@ export default function App() {
            }
          } else {
            const docData = snapshot.docs[0];
-           
            const newData = { ...docData.data() };
            PROFILE_FIELDS.forEach(field => {
              if (typeof newData[field.id] === 'string') {
@@ -517,10 +511,7 @@ export default function App() {
                 newData[field.id] = [];
              }
            });
-           
            setProfile({ id: docData.id, ...newData });
-
-           // [FIX] 데이터가 로드되면 폼에도 반영
            if (!isProfileLoaded.current) {
              setProfForm(newData);
              isProfileLoaded.current = true;
@@ -680,7 +671,7 @@ export default function App() {
        }
     });
 
-    // Build Profile Info (Selected Items Only)
+    // Build Profile Info
     let profInfoStr = "";
     let hasProfData = false;
     PROFILE_FIELDS.forEach(field => {
@@ -738,9 +729,67 @@ ${selStyle ? `[Tone]: ${selStyle.tone} / [Focus]: ${selStyle.focus}` : '기본 �
   };
 
   // --- Helper Components ---
-  const NavItem = ({ id, icon: Icon, label, highlighted }) => (
+  // Mobile Navigation Components
+  const MobileNav = ({ activeTab, setActiveTab, setEditMode }) => {
+    const tabs = [
+      { id: TABS.GENERATOR, icon: Layout, label: '생성' },
+      { id: TABS.EXPERIENCE, icon: FileText, label: '경험' },
+      { id: TABS.COMPANY, icon: Briefcase, label: '기업' },
+      { id: TABS.PROFILE, icon: User, label: '정보' },
+      { id: TABS.STYLE, icon: PenTool, label: '문체' },
+    ];
+
+    return (
+      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 flex justify-around items-center h-16 z-[60] pb-safe">
+        {tabs.map((tab) => (
+          <button
+            key={tab.id}
+            onClick={() => { setActiveTab(tab.id); setEditMode({ active: false, id: null, collection: null }); }}
+            className={`flex flex-col items-center justify-center w-full h-full ${
+              activeTab === tab.id ? 'text-blue-600' : 'text-gray-400'
+            }`}
+          >
+            <tab.icon size={24} className={activeTab === tab.id ? 'fill-blue-100' : ''} />
+            <span className="text-[10px] mt-1 font-medium">{tab.label}</span>
+          </button>
+        ))}
+      </div>
+    );
+  };
+
+  // Sidebar for Desktop (Unchanged logic, just hidden on mobile)
+  const Sidebar = ({ activeTab, setActiveTab, setEditMode, tutorialStep, user, handleLogout }) => (
+    <div className={`hidden md:flex w-64 bg-white border-r border-gray-200 flex-col shadow-lg relative ${tutorialStep > 0 ? 'z-auto' : 'z-10'}`}>
+        <div className="p-6 border-b border-gray-100">
+          <div className="flex items-center gap-2 text-blue-700 font-bold text-xl">
+            <Sparkles className="fill-blue-600" /> <span>자소서 GPT</span>
+          </div>
+        </div>
+        <nav className="flex-1 p-4 overflow-y-auto">
+          <div className={tutorialStep === 2 ? "relative z-[60]" : ""}>
+             <NavItem id={TABS.GENERATOR} icon={Layout} label="프롬프트 생성기" highlighted={tutorialStep === 2} activeTab={activeTab} onClick={() => { setActiveTab(TABS.GENERATOR); setEditMode({active:false,id:null,collection:null}); }} />
+          </div>
+          
+          <div className="text-xs font-bold text-gray-400 mt-6 mb-2 px-4 uppercase">데이터 관리</div>
+          
+          <div className={`transition-all duration-300 ${tutorialStep === 1 ? 'relative z-[60] bg-white p-2 -m-2 rounded-xl ring-4 ring-yellow-400 shadow-2xl' : ''}`}>
+            <NavItem id={TABS.EXPERIENCE} icon={FileText} label="1. 경험 (Experience)" activeTab={activeTab} onClick={() => { setActiveTab(TABS.EXPERIENCE); setEditMode({active:false,id:null,collection:null}); }} />
+            <NavItem id={TABS.COMPANY} icon={Briefcase} label="2. 기업 (Company)" activeTab={activeTab} onClick={() => { setActiveTab(TABS.COMPANY); setEditMode({active:false,id:null,collection:null}); }} />
+            <NavItem id={TABS.PROFILE} icon={User} label="3. 자기 정보 (Me)" activeTab={activeTab} onClick={() => { setActiveTab(TABS.PROFILE); setEditMode({active:false,id:null,collection:null}); }} />
+            <NavItem id={TABS.STYLE} icon={PenTool} label="4. 문체 (Style)" activeTab={activeTab} onClick={() => { setActiveTab(TABS.STYLE); setEditMode({active:false,id:null,collection:null}); }} />
+          </div>
+        </nav>
+        <div className="p-4 bg-gray-50 border-t">
+           <p className="text-sm font-bold text-gray-700 mb-2 truncate">{user.email}</p>
+           <button onClick={handleLogout} className="text-sm text-gray-500 flex items-center gap-2 hover:text-red-600"><LogOut size={16}/> 로그아웃</button>
+        </div>
+    </div>
+  );
+
+  // NavItem for Sidebar
+  const NavItem = ({ id, icon: Icon, label, highlighted, activeTab, onClick }) => (
     <button 
-      onClick={() => { setActiveTab(id); setEditMode({active:false,id:null,collection:null}); }} 
+      onClick={onClick} 
       className={`flex items-center gap-2 px-4 py-3 rounded-lg w-full text-left transition-all duration-300 mb-1 ${
         highlighted 
           ? 'relative z-[60] bg-white ring-4 ring-yellow-400 shadow-2xl text-blue-700 font-bold scale-105' 
@@ -759,24 +808,35 @@ ${selStyle ? `[Tone]: ${selStyle.tone} / [Focus]: ${selStyle.focus}` : '기본 �
   return (
     <div className="flex h-screen bg-gray-100 font-sans overflow-hidden relative">
       
-      {/* Tutorial Overlay */}
+      {/* Tutorial Overlay (Responsive) */}
       {tutorialStep > 0 && (
         <div className="fixed inset-0 bg-black/70 z-50 cursor-pointer animate-in fade-in duration-300" onClick={nextTutorial}>
-          {/* Step 1 Instructions */}
+          {/* Step 1: Desktop */}
           {tutorialStep === 1 && (
-            <div className="absolute left-[280px] top-[40%] text-white animate-bounce-x">
+            <div className="hidden md:block absolute left-[280px] top-[40%] text-white animate-bounce-x">
               <div className="flex items-center gap-4">
                 <ArrowLeft size={48} className="text-yellow-400" />
                 <div>
                   <h2 className="text-3xl font-bold text-yellow-400 mb-2">1단계: 재료 준비</h2>
                   <p className="text-xl font-medium">먼저 이 4개 탭에서 <br/>자신의 경험과 기업 정보를 작성해주세요.</p>
-                  <p className="text-sm text-gray-300 mt-2">(화면을 클릭하면 다음으로 넘어갑니다)</p>
                 </div>
               </div>
             </div>
           )}
+          {/* Step 1: Mobile */}
+          {tutorialStep === 1 && (
+            <div className="md:hidden absolute bottom-20 left-1/2 -translate-x-1/2 text-white text-center w-full px-4 animate-bounce-y">
+               <div className="flex flex-col items-center gap-2">
+                  <div className="text-yellow-400"><ArrowDown size={40} /></div>
+                  <h2 className="text-2xl font-bold text-yellow-400">1단계: 재료 준비</h2>
+                  <p className="text-lg">하단 탭을 눌러<br/>경험과 정보를 채워주세요.</p>
+               </div>
+            </div>
+          )}
+
+          {/* Step 2: Desktop */}
           {tutorialStep === 2 && (
-            <div className="absolute left-[280px] top-14 text-white">
+            <div className="hidden md:block absolute left-[280px] top-14 text-white">
               <div className="flex items-center gap-4">
                 <ArrowLeft size={48} className="text-yellow-400" />
                 <div>
@@ -792,39 +852,40 @@ ${selStyle ? `[Tone]: ${selStyle.tone} / [Focus]: ${selStyle.focus}` : '기본 �
               </div>
             </div>
           )}
+          {/* Step 2: Mobile */}
+          {tutorialStep === 2 && (
+             <div className="md:hidden absolute bottom-20 left-4 text-white w-full px-4 animate-bounce-y">
+                <div className="flex flex-col items-start gap-2">
+                   <div className="text-yellow-400 ml-4"><ArrowDown size={40} /></div>
+                   <h2 className="text-2xl font-bold text-yellow-400">2단계: 프롬프트 생성</h2>
+                   <p className="text-lg">여기서 재료를 조립해<br/>최고의 자소서를 만드세요.</p>
+                   <button 
+                    onClick={(e) => { e.stopPropagation(); finishTutorial(); }}
+                    className="mt-4 bg-yellow-400 text-black font-bold py-2 px-6 rounded-full hover:bg-yellow-300"
+                  >
+                    시작하기
+                  </button>
+                </div>
+             </div>
+          )}
         </div>
       )}
 
-      {/* Sidebar */}
-      <div className={`w-64 bg-white border-r border-gray-200 flex flex-col shadow-lg relative ${tutorialStep > 0 ? 'z-auto' : 'z-10'}`}>
-        <div className="p-6 border-b border-gray-100">
-          <div className="flex items-center gap-2 text-blue-700 font-bold text-xl">
-            <Sparkles className="fill-blue-600" /> <span>자소서 GPT</span>
-          </div>
-        </div>
-        <nav className="flex-1 p-4 overflow-y-auto">
-          <div className={tutorialStep === 2 ? "relative z-[60]" : ""}>
-             <NavItem id={TABS.GENERATOR} icon={Layout} label="프롬프트 생성기" highlighted={tutorialStep === 2} />
-          </div>
-          
-          <div className="text-xs font-bold text-gray-400 mt-6 mb-2 px-4 uppercase">데이터 관리</div>
-          
-          <div className={`transition-all duration-300 ${tutorialStep === 1 ? 'relative z-[60] bg-white p-2 -m-2 rounded-xl ring-4 ring-yellow-400 shadow-2xl' : ''}`}>
-            <NavItem id={TABS.EXPERIENCE} icon={FileText} label="1. 경험 (Experience)" />
-            <NavItem id={TABS.COMPANY} icon={Briefcase} label="2. 기업 (Company)" />
-            <NavItem id={TABS.PROFILE} icon={User} label="3. 자기 정보 (Me)" />
-            <NavItem id={TABS.STYLE} icon={PenTool} label="4. 문체 (Style)" />
-          </div>
-        </nav>
-        <div className="p-4 bg-gray-50 border-t">
-           <p className="text-sm font-bold text-gray-700 mb-2 truncate">{user.email}</p>
-           <button onClick={handleLogout} className="text-sm text-gray-500 flex items-center gap-2 hover:text-red-600"><LogOut size={16}/> 로그아웃</button>
-        </div>
+      {/* Mobile Header */}
+      <div className="md:hidden fixed top-0 left-0 right-0 h-14 bg-white border-b border-gray-200 flex items-center justify-between px-4 z-40">
+         <div className="flex items-center gap-2 text-blue-700 font-bold text-lg">
+            <Sparkles className="fill-blue-600" size={20} /> <span>자소서 GPT</span>
+         </div>
+         <button onClick={handleLogout} className="text-gray-500"><LogOut size={20}/></button>
       </div>
 
+      {/* Sidebar (Desktop Only) */}
+      <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} setEditMode={setEditMode} tutorialStep={tutorialStep} user={user} handleLogout={handleLogout} />
+
       {/* Main Content */}
-      <div className="flex-1 flex flex-col h-screen overflow-hidden">
-        <header className="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-8 shadow-sm shrink-0">
+      <div className="flex-1 flex flex-col h-screen overflow-hidden pt-14 md:pt-0 pb-16 md:pb-0">
+        {/* Desktop Header */}
+        <header className="hidden md:flex h-16 bg-white border-b border-gray-200 items-center justify-between px-8 shadow-sm shrink-0">
           <h2 className="text-xl font-bold text-gray-800 flex items-center gap-2">
             {activeTab === TABS.GENERATOR && "프롬프트 조립 & 생성"}
             {activeTab === TABS.EXPERIENCE && "나의 핵심 경험 관리"}
@@ -835,13 +896,14 @@ ${selStyle ? `[Tone]: ${selStyle.tone} / [Focus]: ${selStyle.focus}` : '기본 �
           {activeTab === TABS.GENERATOR && generatedPrompt && <Button onClick={copyToClipboard} icon={Copy}>복사</Button>}
         </header>
 
-        <main className="flex-1 overflow-y-auto p-8">
+        <main className="flex-1 overflow-y-auto p-4 md:p-8 bg-gray-100">
           
           {/* Generator Tab */}
           {activeTab === TABS.GENERATOR && (
-            <div className="flex gap-6 h-full">
-              <div className="w-7/12 flex flex-col gap-6 overflow-y-auto pr-2 custom-scrollbar">
-                 <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200 space-y-6">
+            <div className="flex flex-col md:flex-row gap-6 h-full">
+              {/* Left Side: Expanded on Desktop */}
+              <div className="w-full md:w-7/12 flex flex-col gap-6 overflow-y-auto pr-1 custom-scrollbar">
+                 <div className="bg-white p-4 md:p-6 rounded-xl shadow-sm border border-gray-200 space-y-6">
                     <div>
                       <label className="block text-xs font-bold text-gray-500 mb-1">질문 유형 / 글자수</label>
                       <div className="flex gap-2">
@@ -864,7 +926,7 @@ ${selStyle ? `[Tone]: ${selStyle.tone} / [Focus]: ${selStyle.focus}` : '기본 �
                                if(!c?.[f.id]) return null;
                                return (
                                  <label key={f.id} className="flex items-start gap-2 text-xs cursor-pointer p-1 hover:bg-white rounded">
-                                    <input type="checkbox" className="mt-1" checked={!!selections.compFields[f.id]} onChange={() => setSelections(p => ({...p, compFields: {...p.compFields, [f.id]: !p.compFields[f.id]}}))} />
+                                    <input type="checkbox" className="mt-1 shrink-0" checked={!!selections.compFields[f.id]} onChange={() => setSelections(p => ({...p, compFields: {...p.compFields, [f.id]: !p.compFields[f.id]}}))} />
                                     <div>
                                       <span className="font-bold block text-gray-700">{f.label.split('?')[0]}</span>
                                       <span className="text-gray-500 block leading-tight">{c[f.id]}</span>
@@ -882,7 +944,7 @@ ${selStyle ? `[Tone]: ${selStyle.tone} / [Focus]: ${selStyle.focus}` : '기본 �
                           {experiences.map(e => (
                              <div key={e.id} onClick={() => setSelections(p => ({...p, expIds: p.expIds.includes(e.id) ? p.expIds.filter(x=>x!==e.id) : [...p.expIds, e.id]}))} 
                                   className={`p-2 rounded text-sm cursor-pointer flex gap-2 ${selections.expIds.includes(e.id) ? 'bg-blue-100 text-blue-800' : 'hover:bg-gray-200'}`}>
-                                {selections.expIds.includes(e.id)?<CheckSquare size={16}/>:<Square size={16}/>} {e.title}
+                                {selections.expIds.includes(e.id)?<CheckSquare size={16} className="shrink-0"/>:<Square size={16} className="shrink-0"/>} <span className="truncate">{e.title}</span>
                              </div>
                           ))}
                        </div>
@@ -928,7 +990,8 @@ ${selStyle ? `[Tone]: ${selStyle.tone} / [Focus]: ${selStyle.focus}` : '기본 �
                     <Button className="w-full" onClick={generatePrompt} disabled={savingTarget === 'generator'} icon={Sparkles}>프롬프트 생성</Button>
                  </div>
               </div>
-              <div className="w-5/12 bg-slate-900 rounded-xl p-6 text-slate-200 overflow-y-auto whitespace-pre-wrap font-mono text-sm border border-slate-700">
+              {/* Right Side: Result Area */}
+              <div className="w-full md:w-5/12 bg-slate-900 rounded-xl p-6 text-slate-200 overflow-y-auto whitespace-pre-wrap font-mono text-sm border border-slate-700 min-h-[300px] md:min-h-0">
                  {generatedPrompt || "좌측에서 재료를 선택하여 프롬프트를 생성하세요."}
               </div>
             </div>
@@ -937,12 +1000,12 @@ ${selStyle ? `[Tone]: ${selStyle.tone} / [Focus]: ${selStyle.focus}` : '기본 �
           {/* Experience Tab */}
           {activeTab === TABS.EXPERIENCE && (
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 h-full">
-               <div className="bg-white p-6 rounded-xl border border-gray-200 flex flex-col h-full">
+               <div className="bg-white p-6 rounded-xl border border-gray-200 flex flex-col h-fit lg:h-full order-1 lg:order-none">
                   <div className="flex justify-between mb-4">
                      <h3 className="font-bold text-blue-800">{editMode.active && editMode.collection==='experiences' ? '경험 수정' : '새 경험 등록'}</h3>
                      {editMode.active && editMode.collection==='experiences' && <Button variant="ghost" onClick={() => cancelEdit(resetExpForm)}><XCircle size={14}/> 취소</Button>}
                   </div>
-                  <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar space-y-4">
+                  <div className="flex-1 lg:overflow-y-auto pr-2 custom-scrollbar space-y-4">
                      {EXP_QUESTIONS.map(q => (
                         <InputField key={q.id} label={q.label} value={expForm[q.id]} onChange={v => setExpForm(p => ({...p, [q.id]: v}))} multiline={q.id!=='title'} />
                      ))}
@@ -955,9 +1018,9 @@ ${selStyle ? `[Tone]: ${selStyle.tone} / [Focus]: ${selStyle.focus}` : '기본 �
                      )}
                   </div>
                </div>
-               <div className="flex flex-col h-full overflow-hidden">
+               <div className="flex flex-col h-full overflow-hidden order-2 lg:order-none">
                   <h3 className="font-bold text-gray-700 mb-4">목록 ({experiences.length})</h3>
-                  <div className="grid gap-4 overflow-y-auto pb-10 pr-2 custom-scrollbar">
+                  <div className="grid gap-4 overflow-y-auto pb-10 pr-2 custom-scrollbar h-full">
                      {experiences.map(e => (
                         <Card key={e.id} title={e.title} onDelete={()=>handleDelete('experiences', e.id)} onEdit={()=>handleEdit('experiences', e, setExpForm)} 
                               expandedContent={<div className="space-y-2 text-sm">{EXP_QUESTIONS.slice(1).map(q => e[q.id] && <div key={q.id}><strong className="text-xs text-gray-500">{q.label}</strong><p>{e[q.id]}</p></div>)}</div>}>
@@ -972,12 +1035,12 @@ ${selStyle ? `[Tone]: ${selStyle.tone} / [Focus]: ${selStyle.focus}` : '기본 �
           {/* Company Tab */}
           {activeTab === TABS.COMPANY && (
              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 h-full">
-                <div className="bg-white p-6 rounded-xl border border-gray-200 flex flex-col h-full">
+                <div className="bg-white p-6 rounded-xl border border-gray-200 flex flex-col h-fit lg:h-full order-1 lg:order-none">
                    <div className="flex justify-between mb-4">
                       <h3 className="font-bold text-blue-800">{editMode.active && editMode.collection==='companies' ? '기업 수정' : '새 기업 등록'}</h3>
                       {editMode.active && editMode.collection==='companies' && <Button variant="ghost" onClick={() => cancelEdit(resetCompForm)}><XCircle size={14}/> 취소</Button>}
                    </div>
-                   <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar space-y-4">
+                   <div className="flex-1 lg:overflow-y-auto pr-2 custom-scrollbar space-y-4">
                       <InputField label="기업명" value={compForm.name} onChange={v=>setCompForm(p=>({...p, name:v}))} />
                       <InputField label="직무" value={compForm.role} onChange={v=>setCompForm(p=>({...p, role:v}))} />
                       {COMP_FIELDS.slice(2).map(f => (
@@ -992,9 +1055,9 @@ ${selStyle ? `[Tone]: ${selStyle.tone} / [Focus]: ${selStyle.focus}` : '기본 �
                      )}
                    </div>
                 </div>
-                <div className="flex flex-col h-full overflow-hidden">
+                <div className="flex flex-col h-full overflow-hidden order-2 lg:order-none">
                    <h3 className="font-bold text-gray-700 mb-4">목록 ({companies.length})</h3>
-                   <div className="grid gap-4 overflow-y-auto pb-10 pr-2 custom-scrollbar">
+                   <div className="grid gap-4 overflow-y-auto pb-10 pr-2 custom-scrollbar h-full">
                       {companies.map(c => (
                          <Card key={c.id} title={`${c.name} (${c.role})`} onDelete={()=>handleDelete('companies', c.id)} onEdit={()=>handleEdit('companies', c, setCompForm)}
                                expandedContent={<div className="space-y-2 text-sm">{COMP_FIELDS.slice(2).map(f => c[f.id] && <div key={f.id}><strong className="text-xs text-gray-500">{f.label}</strong><p>{c[f.id]}</p></div>)}</div>}>
@@ -1012,7 +1075,7 @@ ${selStyle ? `[Tone]: ${selStyle.tone} / [Focus]: ${selStyle.focus}` : '기본 �
           {/* Profile Tab */}
           {activeTab === TABS.PROFILE && (
              <div className="max-w-3xl mx-auto h-full overflow-y-auto custom-scrollbar p-1">
-                <div className="bg-white p-8 rounded-xl border border-gray-200">
+                <div className="bg-white p-8 rounded-xl border border-gray-200 mb-20 md:mb-0">
                    <h3 className="font-bold text-xl mb-6 text-blue-800 flex items-center gap-2"><User size={24}/> 나의 정보 관리 (자동 저장 아님)</h3>
                    <div className="space-y-8">
                       {PROFILE_FIELDS.map(f => (
@@ -1044,7 +1107,7 @@ ${selStyle ? `[Tone]: ${selStyle.tone} / [Focus]: ${selStyle.focus}` : '기본 �
           {/* Style Tab */}
           {activeTab === TABS.STYLE && (
              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 h-full">
-                <div className="bg-white p-6 rounded-xl border border-gray-200 h-fit">
+                <div className="bg-white p-6 rounded-xl border border-gray-200 h-fit order-1 lg:order-none">
                    <h3 className="font-bold text-blue-800 mb-4">스타일 등록</h3>
                    <InputField label="톤 (Tone)" value={styleForm.tone} onChange={v => setStyleForm(p=>({...p, tone:v}))} placeholder="예: 진정성 있는" />
                    <InputField label="초점 (Focus)" value={styleForm.focus} onChange={v => setStyleForm(p=>({...p, focus:v}))} placeholder="예: 성과 중심" />
@@ -1056,7 +1119,7 @@ ${selStyle ? `[Tone]: ${selStyle.tone} / [Focus]: ${selStyle.focus}` : '기본 �
                         </div>
                      )}
                 </div>
-                <div className="overflow-y-auto pr-2 custom-scrollbar">
+                <div className="overflow-y-auto pr-2 custom-scrollbar h-full order-2 lg:order-none">
                    {styles.map(s => (
                       <Card key={s.id} title={s.tone} onDelete={()=>handleDelete('styles', s.id)}><p>초점: {s.focus}</p></Card>
                    ))}
@@ -1065,6 +1128,9 @@ ${selStyle ? `[Tone]: ${selStyle.tone} / [Focus]: ${selStyle.focus}` : '기본 �
           )}
           
         </main>
+
+        {/* Mobile Bottom Navigation */}
+        <MobileNav activeTab={activeTab} setActiveTab={setActiveTab} setEditMode={setEditMode} />
       </div>
     </div>
   );
