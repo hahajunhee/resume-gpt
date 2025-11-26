@@ -27,7 +27,6 @@ const firebaseConfig = {
   appId: "1:1028616419862:web:2f6635eb745d15543a1337",
   measurementId: "G-MQ32GG48GK"
 };
-
 // 앱 초기화
 let app, auth, db;
 try {
@@ -200,7 +199,8 @@ const MultiValueInput = ({ label, items = [], onChange, placeholder }) => {
         <Button onClick={handleAdd} variant="secondary" icon={Plus}>추가</Button>
       </div>
       <div className="space-y-2">
-        {items.map((item, idx) => (
+        {/* Safety check: Ensure items is an array before mapping */}
+        {Array.isArray(items) && items.map((item, idx) => (
           <div key={idx} className="flex items-center justify-between bg-gray-50 p-3 rounded-lg border border-gray-100 group hover:border-blue-200 transition-colors">
             <span className="text-sm text-gray-700">{item}</span>
             <button onClick={() => handleRemove(idx)} className="text-gray-400 hover:text-red-500 p-1">
@@ -208,7 +208,7 @@ const MultiValueInput = ({ label, items = [], onChange, placeholder }) => {
             </button>
           </div>
         ))}
-        {items.length === 0 && <p className="text-xs text-gray-400 ml-1">등록된 항목이 없습니다.</p>}
+        {(!items || items.length === 0) && <p className="text-xs text-gray-400 ml-1">등록된 항목이 없습니다.</p>}
       </div>
     </div>
   );
@@ -450,7 +450,6 @@ export default function App() {
       (snapshot) => {
          if (!snapshot.empty) {
            const docData = snapshot.docs[0];
-           setProfile({ id: docData.id, ...docData.data() });
            
            // Check if data is array-based (new version) or string-based (old version)
            // Convert old string data to array if necessary for compatibility
@@ -458,10 +457,12 @@ export default function App() {
            PROFILE_FIELDS.forEach(field => {
              if (typeof newData[field.id] === 'string') {
                 newData[field.id] = newData[field.id] ? [newData[field.id]] : [];
-             } else if (!newData[field.id]) {
+             } else if (!Array.isArray(newData[field.id])) {
                 newData[field.id] = [];
              }
            });
+           
+           setProfile({ id: docData.id, ...newData });
 
            if (!isProfileLoaded.current) {
              setProfForm(newData);
@@ -822,7 +823,7 @@ ${selStyle ? `[Tone]: ${selStyle.tone} / [Focus]: ${selStyle.focus}` : '기본 �
                              return (
                                <div key={f.id}>
                                   <p className="text-xs font-bold text-gray-500 mb-1">{f.label}</p>
-                                  {savedItems.length > 0 ? (
+                                  {Array.isArray(savedItems) && savedItems.length > 0 ? (
                                     <div className="flex flex-wrap gap-2">
                                       {savedItems.map((item, idx) => (
                                         <label key={idx} className={`flex items-center gap-1 text-xs px-2 py-1 rounded cursor-pointer border ${selections.profDetail[f.id]?.includes(item) ? 'bg-blue-100 border-blue-300 text-blue-800' : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-100'}`}>
