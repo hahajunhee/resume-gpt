@@ -13,7 +13,7 @@ import {
 } from 'firebase/firestore';
 import { 
   Save, Trash2, Copy, FileText, Briefcase, User, PenTool, Layout, 
-  Database, Sparkles, Edit2, ChevronDown, ChevronUp, CheckSquare, Square, XCircle, LogOut, Lock, Mail, AlertCircle, CheckCircle2, ArrowLeft, Plus, Menu, ArrowDown, MousePointerClick
+  Database, Sparkles, Edit2, ChevronDown, ChevronUp, CheckSquare, Square, XCircle, LogOut, Lock, Mail, AlertCircle, CheckCircle2, ArrowLeft, Plus, Menu, ArrowDown, MousePointerClick, GripHorizontal
 } from 'lucide-react';
 
 // --- [중요] Firebase Configuration ---
@@ -27,6 +27,7 @@ const firebaseConfig = {
   appId: "1:1028616419862:web:2f6635eb745d15543a1337",
   measurementId: "G-MQ32GG48GK"
 };
+
 // 앱 초기화
 let app, auth, db;
 try {
@@ -422,7 +423,53 @@ export default function App() {
   });
   
   const [generatedPrompt, setGeneratedPrompt] = useState('');
-  const resultRef = useRef(null); // Ref for result area
+  const resultRef = useRef(null); 
+  
+  // Resize Logic States
+  const [resultHeight, setResultHeight] = useState(200); // Default reduced height
+  const isResizing = useRef(false);
+  const startY = useRef(0);
+  const startHeight = useRef(0);
+
+  // --- Resize Handlers ---
+  const startResize = (e) => {
+    isResizing.current = true;
+    // Mobile touch or Mouse
+    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+    startY.current = clientY;
+    startHeight.current = resultHeight;
+    
+    // Prevent scrolling while resizing on mobile
+    if(e.touches) document.body.style.overflow = 'hidden'; 
+    
+    window.addEventListener('mousemove', handleResizeMove);
+    window.addEventListener('mouseup', stopResize);
+    window.addEventListener('touchmove', handleResizeMove, { passive: false });
+    window.addEventListener('touchend', stopResize);
+  };
+
+  const handleResizeMove = (e) => {
+    if (!isResizing.current) return;
+    
+    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+    // Calculate delta: Moving UP decreases clientY but should INCREASE height
+    const delta = startY.current - clientY; 
+    
+    // Min height 100px, Max height 80% of screen
+    const newHeight = Math.max(100, Math.min(window.innerHeight * 0.8, startHeight.current + delta));
+    setResultHeight(newHeight);
+    
+    if(e.cancelable) e.preventDefault(); // Stop scrolling
+  };
+
+  const stopResize = () => {
+    isResizing.current = false;
+    document.body.style.overflow = ''; // Restore scrolling
+    window.removeEventListener('mousemove', handleResizeMove);
+    window.removeEventListener('mouseup', stopResize);
+    window.removeEventListener('touchmove', handleResizeMove);
+    window.removeEventListener('touchend', stopResize);
+  };
 
   // --- Auth & Data Fetching ---
   useEffect(() => {
@@ -1008,9 +1055,24 @@ ${selStyle ? `[Tone]: ${selStyle.tone} / [Focus]: ${selStyle.focus}` : '기본 �
                  <Button className="w-full py-3 shadow-lg text-lg font-bold" onClick={generatePrompt} disabled={savingTarget === 'generator'} icon={Sparkles}>프롬프트 생성</Button>
               </div>
 
-              {/* Right Side: Result Area */}
-              <div ref={resultRef} className="w-full md:w-5/12 bg-slate-900 rounded-xl p-6 text-slate-200 overflow-y-auto whitespace-pre-wrap font-mono text-sm border border-slate-700 min-h-[300px] md:min-h-0 mb-32 md:mb-0">
-                 {generatedPrompt || "좌측에서 재료를 선택하여 프롬프트를 생성하세요."}
+              {/* Right Side: Result Area (Modified for Mobile Resizing) */}
+              <div 
+                ref={resultRef} 
+                style={{ height: window.innerWidth < 768 ? `${resultHeight}px` : 'auto', minHeight: window.innerWidth < 768 ? '100px' : '0' }}
+                className="w-full md:w-5/12 bg-slate-900 rounded-xl p-6 text-slate-200 overflow-y-auto whitespace-pre-wrap font-mono text-sm border border-slate-700 mb-32 md:mb-0 relative transition-height duration-100 ease-out"
+              >
+                 {/* Mobile Resize Handle */}
+                 <div 
+                    className="md:hidden absolute top-0 left-0 right-0 h-8 flex items-center justify-center bg-slate-800 border-b border-slate-700 cursor-row-resize rounded-t-xl touch-none"
+                    onTouchStart={startResize}
+                    onMouseDown={startResize}
+                 >
+                    <div className="w-12 h-1.5 bg-slate-600 rounded-full" />
+                 </div>
+                 
+                 <div className="mt-4 md:mt-0">
+                    {generatedPrompt || "좌측에서 재료를 선택하여 프롬프트를 생성하세요."}
+                 </div>
               </div>
             </div>
           )}
@@ -1137,7 +1199,7 @@ ${selStyle ? `[Tone]: ${selStyle.tone} / [Focus]: ${selStyle.focus}` : '기본 �
                         </div>
                      )}
                 </div>
-                <div className="flex flex-col h-auto lg:h-full lg:overflow-hidden order-2 lg:order-none mt-8 lg:mt-0">
+                <div className="overflow-y-auto pr-2 custom-scrollbar h-full order-2 lg:order-none">
                    <div className="grid gap-4 pb-24 lg:pb-10 pr-2 custom-scrollbar lg:overflow-y-auto h-auto lg:h-full">
                       {styles.map(s => (
                          <Card key={s.id} title={s.tone} onDelete={()=>handleDelete('styles', s.id)}><p>초점: {s.focus}</p></Card>
