@@ -13,10 +13,11 @@ import {
 } from 'firebase/firestore';
 import { 
   Save, Trash2, Copy, FileText, Briefcase, User, PenTool, Layout, 
-  Database, Sparkles, Edit2, ChevronDown, ChevronUp, CheckSquare, Square, XCircle, LogOut, Lock, Mail, AlertCircle, CheckCircle2, ArrowLeft, Plus, Menu, ArrowDown, MousePointerClick, GripHorizontal, Info
+  Database, Sparkles, Edit2, ChevronDown, ChevronUp, CheckSquare, Square, XCircle, LogOut, Lock, Mail, AlertCircle, CheckCircle2, ArrowLeft, Plus, Menu, ArrowDown, MousePointerClick, GripHorizontal, Info, List, PenLine
 } from 'lucide-react';
 
 // --- [중요] Firebase Configuration ---
+// 본인의 Firebase 설정값으로 변경해주세요.
 const firebaseConfig = {
   apiKey: "AIzaSyCRRqFzQJAIfbos7wg2GIItjzqmThrIZYc",
   authDomain: "jasoseo-cff03.firebaseapp.com",
@@ -82,6 +83,7 @@ const PROFILE_FIELDS = [
   { id: 'goals', label: '⑤ 장래 목표' }
 ];
 
+// --- Default Data Sets ---
 const DEFAULT_COMPANIES = [
   {
     name: "삼성전자",
@@ -173,7 +175,7 @@ const InputField = ({ label, value, onChange, placeholder, multiline = false, is
     <label className="block text-sm font-semibold text-gray-700 mb-1">{label}</label>
     {multiline ? (
       <textarea
-        className={`w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 min-h-[100px] transition-all duration-300 ${
+        className={`w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 min-h-[120px] transition-all duration-300 ${
             isHighlighted ? 'border-yellow-400 bg-yellow-50 ring-2 ring-yellow-200' : 'border-gray-300'
         }`}
         value={value || ''}
@@ -390,6 +392,9 @@ export default function App() {
   const [user, setUser] = useState(null);
   const [activeTab, setActiveTab] = useState(TABS.GENERATOR);
   
+  // [New] Mobile Sub Tab State ('form' | 'list')
+  const [mobileSubTab, setMobileSubTab] = useState('form');
+
   const [tutorialStep, setTutorialStep] = useState(0);
   const [savingTarget, setSavingTarget] = useState(null);
   const [statusMsg, setStatusMsg] = useState(null); 
@@ -485,6 +490,11 @@ export default function App() {
     });
     return () => unsubscribe();
   }, []);
+
+  // Reset mobile sub-tab when main tab changes
+  useEffect(() => {
+    setMobileSubTab('form');
+  }, [activeTab]);
 
   useEffect(() => {
     if (!user || !db) return;
@@ -667,6 +677,9 @@ export default function App() {
     setFormFn(item); 
     setEditMode({ active: true, id: item.id, collection: colName });
     
+    // Switch to form view on mobile
+    setMobileSubTab('form');
+
     // [Fix] Scroll the main content container to top
     if (mainContentRef.current) {
         mainContentRef.current.scrollTo({ top: 0, behavior: 'smooth' });
@@ -1111,85 +1124,124 @@ ${selStyle ? `[Tone]: ${selStyle.tone} / [Focus]: ${selStyle.focus}` : '기본 �
             </div>
           )}
 
-          {/* Experience Tab */}
+          {/* Experience Tab (Mobile Tabs Implementation) */}
           {activeTab === TABS.EXPERIENCE && (
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 h-full">
-               <div className={`bg-white rounded-xl border border-gray-200 flex flex-col h-auto lg:h-full order-1 lg:order-none overflow-hidden ${isFormHighlighted ? 'ring-4 ring-yellow-300 transition-all duration-500' : ''}`}>
-                  <div className="flex justify-between p-6 border-b border-gray-100 shrink-0 bg-white">
-                     <h3 className="font-bold text-blue-800">{editMode.active && editMode.collection==='experiences' ? '경험 수정' : '새 경험 등록'}</h3>
-                     {editMode.active && editMode.collection==='experiences' && <Button variant="ghost" onClick={() => cancelEdit(resetExpForm)}><XCircle size={14}/> 취소</Button>}
-                  </div>
-                  
-                  {/* Scrollable Inputs */}
-                  <div className="flex-1 overflow-y-auto p-6 custom-scrollbar">
-                     <div className="space-y-4">
-                       {EXP_QUESTIONS.map(q => (
-                          <InputField key={q.id} label={q.label} value={expForm[q.id]} onChange={v => setExpForm(p => ({...p, [q.id]: v}))} multiline={q.id!=='title'} isHighlighted={isFormHighlighted} />
-                       ))}
+            <>
+               {/* Mobile Toggle Tabs */}
+               <div className="md:hidden flex mb-4 bg-gray-200 p-1 rounded-lg shrink-0">
+                  <button 
+                     className={`flex-1 py-2 text-sm font-bold rounded-md transition-all ${mobileSubTab === 'form' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-500'}`}
+                     onClick={() => setMobileSubTab('form')}
+                  >
+                     ✏️ 작성하기
+                  </button>
+                  <button 
+                     className={`flex-1 py-2 text-sm font-bold rounded-md transition-all ${mobileSubTab === 'list' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-500'}`}
+                     onClick={() => setMobileSubTab('list')}
+                  >
+                     📋 목록 ({experiences.length})
+                  </button>
+               </div>
+
+               <div className="flex flex-col lg:grid lg:grid-cols-2 gap-6 h-auto lg:h-full">
+                  {/* Form Section */}
+                  <div className={`${mobileSubTab === 'list' ? 'hidden' : 'flex'} lg:flex bg-white p-6 rounded-xl border border-gray-200 flex-col h-auto lg:h-full order-1 lg:order-none ${isFormHighlighted ? 'ring-4 ring-yellow-300 transition-all duration-500' : ''}`}>
+                     <div className="flex justify-between mb-4 border-b border-gray-100 pb-2">
+                        <h3 className="font-bold text-blue-800">{editMode.active && editMode.collection==='experiences' ? '경험 수정' : '새 경험 등록'}</h3>
+                        {editMode.active && editMode.collection==='experiences' && <Button variant="ghost" onClick={() => cancelEdit(resetExpForm)}><XCircle size={14}/> 취소</Button>}
+                     </div>
+                     
+                     {/* Inputs Container - No scroll lock on mobile */}
+                     <div className="flex-1 lg:overflow-y-auto lg:pr-2 custom-scrollbar space-y-4">
+                        {EXP_QUESTIONS.map(q => (
+                           <InputField key={q.id} label={q.label} value={expForm[q.id]} onChange={v => setExpForm(p => ({...p, [q.id]: v}))} multiline={q.id!=='title'} isHighlighted={isFormHighlighted} />
+                        ))}
+                        {/* Mobile Save Button inside form flow */}
+                        <div className="lg:hidden pt-4 pb-10">
+                           <Button className="w-full" onClick={() => handleSave('experience', 'experiences', expForm, resetExpForm)} disabled={savingTarget === 'experience'} icon={Save}>{savingTarget === 'experience' ? '저장 중...' : '저장하기'}</Button>
+                        </div>
+                     </div>
+
+                     {/* Desktop Fixed Save Button */}
+                     <div className="hidden lg:block pt-4 border-t border-gray-100 mt-auto">
+                        <Button className="w-full" onClick={() => handleSave('experience', 'experiences', expForm, resetExpForm)} disabled={savingTarget === 'experience'} icon={Save}>{savingTarget === 'experience' ? '저장 중...' : '저장하기'}</Button>
                      </div>
                   </div>
 
-                  {/* Fixed Save Button */}
-                  <div className="p-4 border-t border-gray-100 shrink-0 bg-white pb-24 lg:pb-4">
-                     <Button className="w-full" onClick={() => handleSave('experience', 'experiences', expForm, resetExpForm)} disabled={savingTarget === 'experience'} icon={Save}>{savingTarget === 'experience' ? '저장 중...' : '저장하기'}</Button>
+                  {/* List Section */}
+                  <div className={`${mobileSubTab === 'form' ? 'hidden' : 'flex'} lg:flex flex-col h-auto lg:h-full lg:overflow-hidden order-2 lg:order-none`}>
+                     <h3 className="font-bold text-gray-700 mb-4 shrink-0">목록 ({experiences.length})</h3>
+                     <div className="grid gap-4 pb-24 lg:pb-10 pr-2 custom-scrollbar lg:overflow-y-auto h-auto lg:h-full">
+                        {experiences.map(e => (
+                           <Card key={e.id} title={e.title} onDelete={()=>handleDelete('experiences', e.id)} onEdit={()=>handleEdit('experiences', e, setExpForm)} 
+                                 expandedContent={<div className="space-y-2 text-sm">{EXP_QUESTIONS.slice(1).map(q => e[q.id] && <div key={q.id}><strong className="text-xs text-gray-500">{q.label}</strong><p>{e[q.id]}</p></div>)}</div>}>
+                              <p className="line-clamp-2 mt-2 text-gray-600">{e.result}</p>
+                           </Card>
+                        ))}
+                     </div>
                   </div>
                </div>
-
-               <div className="flex flex-col h-auto lg:h-full lg:overflow-hidden order-2 lg:order-none mt-8 lg:mt-0">
-                  <h3 className="font-bold text-gray-700 mb-4 shrink-0">목록 ({experiences.length})</h3>
-                  <div className="grid gap-4 pb-24 lg:pb-10 pr-2 custom-scrollbar lg:overflow-y-auto h-auto lg:h-full">
-                     {experiences.map(e => (
-                        <Card key={e.id} title={e.title} onDelete={()=>handleDelete('experiences', e.id)} onEdit={()=>handleEdit('experiences', e, setExpForm)} 
-                              expandedContent={<div className="space-y-2 text-sm">{EXP_QUESTIONS.slice(1).map(q => e[q.id] && <div key={q.id}><strong className="text-xs text-gray-500">{q.label}</strong><p>{e[q.id]}</p></div>)}</div>}>
-                           <p className="line-clamp-2 mt-2 text-gray-600">{e.result}</p>
-                        </Card>
-                     ))}
-                  </div>
-               </div>
-            </div>
+            </>
           )}
 
           {/* Company Tab */}
           {activeTab === TABS.COMPANY && (
-             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 h-full">
-                <div className={`bg-white rounded-xl border border-gray-200 flex flex-col h-auto lg:h-full order-1 lg:order-none overflow-hidden ${isFormHighlighted ? 'ring-4 ring-yellow-300 transition-all duration-500' : ''}`}>
-                   <div className="flex justify-between p-6 border-b border-gray-100 shrink-0 bg-white">
-                      <h3 className="font-bold text-blue-800">{editMode.active && editMode.collection==='companies' ? '기업 수정' : '새 기업 등록'}</h3>
-                      {editMode.active && editMode.collection==='companies' && <Button variant="ghost" onClick={() => cancelEdit(resetCompForm)}><XCircle size={14}/> 취소</Button>}
-                   </div>
+             <>
+                {/* Mobile Toggle Tabs */}
+                <div className="md:hidden flex mb-4 bg-gray-200 p-1 rounded-lg shrink-0">
+                   <button 
+                      className={`flex-1 py-2 text-sm font-bold rounded-md transition-all ${mobileSubTab === 'form' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-500'}`}
+                      onClick={() => setMobileSubTab('form')}
+                   >
+                      ✏️ 작성하기
+                   </button>
+                   <button 
+                      className={`flex-1 py-2 text-sm font-bold rounded-md transition-all ${mobileSubTab === 'list' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-500'}`}
+                      onClick={() => setMobileSubTab('list')}
+                   >
+                      📋 목록 ({companies.length})
+                   </button>
+                </div>
 
-                   {/* Scrollable Inputs */}
-                   <div className="flex-1 overflow-y-auto p-6 custom-scrollbar">
-                      <div className="space-y-4">
-                        <InputField label="기업명" value={compForm.name} onChange={v=>setCompForm(p=>({...p, name:v}))} isHighlighted={isFormHighlighted} />
-                        <InputField label="직무" value={compForm.role} onChange={v=>setCompForm(p=>({...p, role:v}))} isHighlighted={isFormHighlighted} />
-                        {COMP_FIELDS.slice(2).map(f => (
-                           <InputField key={f.id} label={f.label} value={compForm[f.id]} onChange={v=>setCompForm(p=>({...p, [f.id]:v}))} multiline placeholder={f.placeholder} isHighlighted={isFormHighlighted} />
-                        ))}
+                <div className="flex flex-col lg:grid lg:grid-cols-2 gap-6 h-auto lg:h-full">
+                   <div className={`${mobileSubTab === 'list' ? 'hidden' : 'flex'} lg:flex bg-white p-6 rounded-xl border border-gray-200 flex-col h-auto lg:h-full order-1 lg:order-none ${isFormHighlighted ? 'ring-4 ring-yellow-300 transition-all duration-500' : ''}`}>
+                      <div className="flex justify-between mb-4 border-b border-gray-100 pb-2">
+                         <h3 className="font-bold text-blue-800">{editMode.active && editMode.collection==='companies' ? '기업 수정' : '새 기업 등록'}</h3>
+                         {editMode.active && editMode.collection==='companies' && <Button variant="ghost" onClick={() => cancelEdit(resetCompForm)}><XCircle size={14}/> 취소</Button>}
+                      </div>
+
+                      <div className="flex-1 lg:overflow-y-auto lg:pr-2 custom-scrollbar space-y-4">
+                         <InputField label="기업명" value={compForm.name} onChange={v=>setCompForm(p=>({...p, name:v}))} isHighlighted={isFormHighlighted} />
+                         <InputField label="직무" value={compForm.role} onChange={v=>setCompForm(p=>({...p, role:v}))} isHighlighted={isFormHighlighted} />
+                         {COMP_FIELDS.slice(2).map(f => (
+                            <InputField key={f.id} label={f.label} value={compForm[f.id]} onChange={v=>setCompForm(p=>({...p, [f.id]:v}))} multiline placeholder={f.placeholder} isHighlighted={isFormHighlighted} />
+                         ))}
+                         <div className="lg:hidden pt-4 pb-10">
+                            <Button className="w-full" onClick={() => handleSave('company', 'companies', compForm, resetCompForm)} disabled={savingTarget === 'company'} icon={Save}>{savingTarget === 'company' ? '저장 중...' : '저장하기'}</Button>
+                         </div>
+                      </div>
+
+                      <div className="hidden lg:block pt-4 border-t border-gray-100 mt-auto">
+                         <Button className="w-full" onClick={() => handleSave('company', 'companies', compForm, resetCompForm)} disabled={savingTarget === 'company'} icon={Save}>{savingTarget === 'company' ? '저장 중...' : '저장하기'}</Button>
                       </div>
                    </div>
 
-                   {/* Fixed Save Button */}
-                   <div className="p-4 border-t border-gray-100 shrink-0 bg-white pb-24 lg:pb-4">
-                      <Button className="w-full" onClick={() => handleSave('company', 'companies', compForm, resetCompForm)} disabled={savingTarget === 'company'} icon={Save}>{savingTarget === 'company' ? '저장 중...' : '저장하기'}</Button>
+                   <div className={`${mobileSubTab === 'form' ? 'hidden' : 'flex'} lg:flex flex-col h-auto lg:h-full lg:overflow-hidden order-2 lg:order-none`}>
+                      <h3 className="font-bold text-gray-700 mb-4 shrink-0">목록 ({companies.length})</h3>
+                      <div className="grid gap-4 pb-24 lg:pb-10 pr-2 custom-scrollbar lg:overflow-y-auto h-auto lg:h-full">
+                         {companies.map(c => (
+                            <Card key={c.id} title={`${c.name} (${c.role})`} onDelete={()=>handleDelete('companies', c.id)} onEdit={()=>handleEdit('companies', c, setCompForm)}
+                                  expandedContent={<div className="space-y-2 text-sm">{COMP_FIELDS.slice(2).map(f => c[f.id] && <div key={f.id}><strong className="text-xs text-gray-500">{f.label}</strong><p>{c[f.id]}</p></div>)}</div>}>
+                               <div className="mt-2 text-xs text-gray-500 space-y-1">
+                                  {c.vision && <p className="line-clamp-1">비전: {c.vision}</p>}
+                                  {c.jd_skills && <p className="line-clamp-1">역량: {c.jd_skills}</p>}
+                               </div>
+                            </Card>
+                         ))}
+                      </div>
                    </div>
                 </div>
-
-                <div className="flex flex-col h-auto lg:h-full lg:overflow-hidden order-2 lg:order-none mt-8 lg:mt-0">
-                   <h3 className="font-bold text-gray-700 mb-4 shrink-0">목록 ({companies.length})</h3>
-                   <div className="grid gap-4 pb-24 lg:pb-10 pr-2 custom-scrollbar lg:overflow-y-auto h-auto lg:h-full">
-                      {companies.map(c => (
-                         <Card key={c.id} title={`${c.name} (${c.role})`} onDelete={()=>handleDelete('companies', c.id)} onEdit={()=>handleEdit('companies', c, setCompForm)}
-                               expandedContent={<div className="space-y-2 text-sm">{COMP_FIELDS.slice(2).map(f => c[f.id] && <div key={f.id}><strong className="text-xs text-gray-500">{f.label}</strong><p>{c[f.id]}</p></div>)}</div>}>
-                            <div className="mt-2 text-xs text-gray-500 space-y-1">
-                               {c.vision && <p className="line-clamp-1">비전: {c.vision}</p>}
-                               {c.jd_skills && <p className="line-clamp-1">역량: {c.jd_skills}</p>}
-                            </div>
-                         </Card>
-                      ))}
-                   </div>
-                </div>
-             </div>
+             </>
           )}
 
           {/* Profile Tab */}
@@ -1221,30 +1273,51 @@ ${selStyle ? `[Tone]: ${selStyle.tone} / [Focus]: ${selStyle.focus}` : '기본 �
 
           {/* Style Tab */}
           {activeTab === TABS.STYLE && (
-             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 h-full">
-                <div className={`bg-white rounded-xl border border-gray-200 flex flex-col h-auto lg:h-full order-1 lg:order-none overflow-hidden ${isFormHighlighted ? 'ring-4 ring-yellow-300 transition-all duration-500' : ''}`}>
-                   <div className="p-6 border-b border-gray-100 shrink-0 bg-white">
-                      <h3 className="font-bold text-blue-800 mb-0">스타일 등록</h3>
-                   </div>
-
-                   <div className="flex-1 overflow-y-auto p-6 custom-scrollbar space-y-4">
-                      <InputField label="톤 (Tone)" value={styleForm.tone} onChange={v => setStyleForm(p=>({...p, tone:v}))} placeholder="예: 진정성 있는" isHighlighted={isFormHighlighted} />
-                      <InputField label="초점 (Focus)" value={styleForm.focus} onChange={v => setStyleForm(p=>({...p, focus:v}))} placeholder="예: 성과 중심" isHighlighted={isFormHighlighted} />
-                   </div>
-
-                   <div className="p-4 border-t border-gray-100 shrink-0 bg-white pb-24 lg:pb-4">
-                      <Button className="w-full" onClick={() => handleSave('style', 'styles', styleForm, () => setStyleForm({tone:'', focus:''}))} disabled={savingTarget === 'style'}>{savingTarget === 'style' ? '저장 중...' : '저장'}</Button>
-                   </div>
+             <>
+                {/* Mobile Toggle Tabs */}
+                <div className="md:hidden flex mb-4 bg-gray-200 p-1 rounded-lg shrink-0">
+                   <button 
+                      className={`flex-1 py-2 text-sm font-bold rounded-md transition-all ${mobileSubTab === 'form' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-500'}`}
+                      onClick={() => setMobileSubTab('form')}
+                   >
+                      ✏️ 작성하기
+                   </button>
+                   <button 
+                      className={`flex-1 py-2 text-sm font-bold rounded-md transition-all ${mobileSubTab === 'list' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-500'}`}
+                      onClick={() => setMobileSubTab('list')}
+                   >
+                      📋 목록 ({styles.length})
+                   </button>
                 </div>
 
-                <div className="flex flex-col h-auto lg:h-full lg:overflow-hidden order-2 lg:order-none mt-8 lg:mt-0">
-                   <div className="grid gap-4 pb-24 lg:pb-10 pr-2 custom-scrollbar lg:overflow-y-auto h-auto lg:h-full">
-                      {styles.map(s => (
-                         <Card key={s.id} title={s.tone} onDelete={()=>handleDelete('styles', s.id)}><p>초점: {s.focus}</p></Card>
-                      ))}
+                <div className="flex flex-col lg:grid lg:grid-cols-2 gap-6 h-auto lg:h-full">
+                   <div className={`${mobileSubTab === 'list' ? 'hidden' : 'flex'} lg:flex bg-white p-6 rounded-xl border border-gray-200 flex-col h-auto lg:h-full order-1 lg:order-none ${isFormHighlighted ? 'ring-4 ring-yellow-300 transition-all duration-500' : ''}`}>
+                      <div className="p-6 border-b border-gray-100 shrink-0 bg-white">
+                         <h3 className="font-bold text-blue-800 mb-0">스타일 등록</h3>
+                      </div>
+
+                      <div className="flex-1 lg:overflow-y-auto lg:p-6 custom-scrollbar space-y-4">
+                         <InputField label="톤 (Tone)" value={styleForm.tone} onChange={v => setStyleForm(p=>({...p, tone:v}))} placeholder="예: 진정성 있는" isHighlighted={isFormHighlighted} />
+                         <InputField label="초점 (Focus)" value={styleForm.focus} onChange={v => setStyleForm(p=>({...p, focus:v}))} placeholder="예: 성과 중심" isHighlighted={isFormHighlighted} />
+                         <div className="lg:hidden pt-4 pb-10">
+                            <Button className="w-full" onClick={() => handleSave('style', 'styles', styleForm, () => setStyleForm({tone:'', focus:''}))} disabled={savingTarget === 'style'}>{savingTarget === 'style' ? '저장 중...' : '저장'}</Button>
+                         </div>
+                      </div>
+
+                      <div className="hidden lg:block p-4 border-t border-gray-100 mt-auto">
+                         <Button className="w-full" onClick={() => handleSave('style', 'styles', styleForm, () => setStyleForm({tone:'', focus:''}))} disabled={savingTarget === 'style'}>{savingTarget === 'style' ? '저장 중...' : '저장'}</Button>
+                      </div>
+                   </div>
+
+                   <div className={`${mobileSubTab === 'form' ? 'hidden' : 'flex'} lg:flex flex-col h-auto lg:h-full lg:overflow-hidden order-2 lg:order-none`}>
+                      <div className="grid gap-4 pb-24 lg:pb-10 pr-2 custom-scrollbar lg:overflow-y-auto h-auto lg:h-full">
+                         {styles.map(s => (
+                            <Card key={s.id} title={s.tone} onDelete={()=>handleDelete('styles', s.id)}><p>초점: {s.focus}</p></Card>
+                         ))}
+                      </div>
                    </div>
                 </div>
-             </div>
+             </>
           )}
           
         </main>
