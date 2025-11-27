@@ -13,7 +13,7 @@ import {
 } from 'firebase/firestore';
 import { 
   Save, Trash2, Copy, FileText, Briefcase, User, PenTool, Layout, 
-  Database, Sparkles, Edit2, ChevronDown, ChevronUp, CheckSquare, Square, XCircle, LogOut, Lock, Mail, AlertCircle, CheckCircle2, ArrowLeft, Plus, Menu, ArrowDown
+  Database, Sparkles, Edit2, ChevronDown, ChevronUp, CheckSquare, Square, XCircle, LogOut, Lock, Mail, AlertCircle, CheckCircle2, ArrowLeft, Plus, Menu, ArrowDown, MousePointerClick
 } from 'lucide-react';
 
 // --- [중요] Firebase Configuration ---
@@ -27,7 +27,6 @@ const firebaseConfig = {
   appId: "1:1028616419862:web:2f6635eb745d15543a1337",
   measurementId: "G-MQ32GG48GK"
 };
-
 // 앱 초기화
 let app, auth, db;
 try {
@@ -423,6 +422,7 @@ export default function App() {
   });
   
   const [generatedPrompt, setGeneratedPrompt] = useState('');
+  const resultRef = useRef(null); // Ref for result area
 
   // --- Auth & Data Fetching ---
   useEffect(() => {
@@ -721,6 +721,11 @@ ${selStyle ? `[Tone]: ${selStyle.tone} / [Focus]: ${selStyle.focus}` : '기본 �
 위 지침을 준수하여 최고의 자기소개서 초안을 작성해주세요.
 `;
     setGeneratedPrompt(prompt);
+    
+    // Auto-scroll to result (Desktop/Mobile)
+    setTimeout(() => {
+        resultRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }, 100);
   };
 
   const copyToClipboard = () => {
@@ -900,9 +905,9 @@ ${selStyle ? `[Tone]: ${selStyle.tone} / [Focus]: ${selStyle.focus}` : '기본 �
           
           {/* Generator Tab */}
           {activeTab === TABS.GENERATOR && (
-            <div className="flex flex-col md:flex-row gap-6 h-full">
-              {/* Left Side: Expanded on Desktop */}
-              <div className="w-full md:w-7/12 flex flex-col gap-6 overflow-y-auto pr-1 custom-scrollbar">
+            <div className="flex flex-col md:flex-row gap-6 h-full relative">
+              {/* Left Side: Scrollable Inputs Area */}
+              <div className="w-full md:w-7/12 flex flex-col gap-6 overflow-y-auto pr-1 custom-scrollbar pb-32 md:pb-0">
                  <div className="bg-white p-4 md:p-6 rounded-xl shadow-sm border border-gray-200 space-y-6">
                     <div>
                       <label className="block text-xs font-bold text-gray-500 mb-1">질문 유형 / 글자수</label>
@@ -987,11 +992,24 @@ ${selStyle ? `[Tone]: ${selStyle.tone} / [Focus]: ${selStyle.focus}` : '기본 �
                         </select>
                     </div>
                     
-                    <Button className="w-full" onClick={generatePrompt} disabled={savingTarget === 'generator'} icon={Sparkles}>프롬프트 생성</Button>
+                    {/* Desktop Button (Hidden on Mobile) */}
+                    <div className="hidden md:block">
+                       <Button className="w-full" onClick={generatePrompt} disabled={savingTarget === 'generator'} icon={Sparkles}>프롬프트 생성</Button>
+                    </div>
                  </div>
               </div>
+
+              {/* Mobile Fixed Button & Scroll Hint (Visible only on mobile) */}
+              <div className="md:hidden fixed bottom-16 left-0 right-0 p-4 bg-white border-t border-gray-200 z-50 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)]">
+                 {/* Scroll Hint Arrow */}
+                 <div className="absolute -top-12 left-1/2 -translate-x-1/2 text-blue-500 animate-bounce pointer-events-none bg-white/90 rounded-full p-2 shadow-sm border border-gray-100">
+                    <ArrowDown size={20} />
+                 </div>
+                 <Button className="w-full py-3 shadow-lg text-lg font-bold" onClick={generatePrompt} disabled={savingTarget === 'generator'} icon={Sparkles}>프롬프트 생성</Button>
+              </div>
+
               {/* Right Side: Result Area */}
-              <div className="w-full md:w-5/12 bg-slate-900 rounded-xl p-6 text-slate-200 overflow-y-auto whitespace-pre-wrap font-mono text-sm border border-slate-700 min-h-[300px] md:min-h-0">
+              <div ref={resultRef} className="w-full md:w-5/12 bg-slate-900 rounded-xl p-6 text-slate-200 overflow-y-auto whitespace-pre-wrap font-mono text-sm border border-slate-700 min-h-[300px] md:min-h-0 mb-32 md:mb-0">
                  {generatedPrompt || "좌측에서 재료를 선택하여 프롬프트를 생성하세요."}
               </div>
             </div>
