@@ -27,7 +27,6 @@ const firebaseConfig = {
   appId: "1:1028616419862:web:2f6635eb745d15543a1337",
   measurementId: "G-MQ32GG48GK"
 };
-
 // 앱 초기화
 let app, auth, db;
 try {
@@ -170,7 +169,6 @@ const Button = ({ children, onClick, variant = 'primary', className = '', icon: 
   );
 };
 
-// [Updated] InputField supports highlighting
 const InputField = ({ label, value, onChange, placeholder, multiline = false, isHighlighted }) => (
   <div className="mb-4">
     <label className="block text-sm font-semibold text-gray-700 mb-1">{label}</label>
@@ -197,7 +195,6 @@ const InputField = ({ label, value, onChange, placeholder, multiline = false, is
   </div>
 );
 
-// [Updated] MultiValueInput supports highlighting
 const MultiValueInput = ({ label, items = [], onChange, placeholder, isHighlighted }) => {
   const [inputValue, setInputValue] = useState('');
 
@@ -1121,7 +1118,7 @@ ${selStyle ? `[Tone]: ${selStyle.tone} / [Focus]: ${selStyle.focus}` : '기본 �
                      <h3 className="font-bold text-blue-800">{editMode.active && editMode.collection==='experiences' ? '경험 수정' : '새 경험 등록'}</h3>
                      {editMode.active && editMode.collection==='experiences' && <Button variant="ghost" onClick={() => cancelEdit(resetExpForm)}><XCircle size={14}/> 취소</Button>}
                   </div>
-                  <div className="flex-1 lg:overflow-y-auto pr-2 custom-scrollbar space-y-4">
+                  <div className="flex-1 lg:overflow-y-auto pr-2 custom-scrollbar space-y-4 pb-24 lg:pb-0">
                      {EXP_QUESTIONS.map(q => (
                         <InputField key={q.id} label={q.label} value={expForm[q.id]} onChange={v => setExpForm(p => ({...p, [q.id]: v}))} multiline={q.id!=='title'} isHighlighted={isFormHighlighted} />
                      ))}
@@ -1150,7 +1147,7 @@ ${selStyle ? `[Tone]: ${selStyle.tone} / [Focus]: ${selStyle.focus}` : '기본 �
                       <h3 className="font-bold text-blue-800">{editMode.active && editMode.collection==='companies' ? '기업 수정' : '새 기업 등록'}</h3>
                       {editMode.active && editMode.collection==='companies' && <Button variant="ghost" onClick={() => cancelEdit(resetCompForm)}><XCircle size={14}/> 취소</Button>}
                    </div>
-                   <div className="flex-1 lg:overflow-y-auto pr-2 custom-scrollbar space-y-4 pb-20">
+                   <div className="flex-1 lg:overflow-y-auto pr-2 custom-scrollbar space-y-4 pb-24 lg:pb-0">
                       <InputField label="기업명" value={compForm.name} onChange={v=>setCompForm(p=>({...p, name:v}))} isHighlighted={isFormHighlighted} />
                       <InputField label="직무" value={compForm.role} onChange={v=>setCompForm(p=>({...p, role:v}))} isHighlighted={isFormHighlighted} />
                       {COMP_FIELDS.slice(2).map(f => (
@@ -1178,7 +1175,7 @@ ${selStyle ? `[Tone]: ${selStyle.tone} / [Focus]: ${selStyle.focus}` : '기본 �
 
           {/* Profile Tab */}
           {activeTab === TABS.PROFILE && (
-             <div className="max-w-3xl mx-auto h-full overflow-y-auto custom-scrollbar p-1 pb-24">
+             <div className="max-w-3xl mx-auto h-full overflow-y-auto custom-scrollbar p-1 pb-32 lg:pb-0">
                 <div className={`bg-white p-8 rounded-xl border border-gray-200 mb-20 md:mb-0 ${isFormHighlighted ? 'ring-4 ring-yellow-300 transition-all duration-500' : ''}`}>
                    <h3 className="font-bold text-xl mb-6 text-blue-800 flex items-center gap-2"><User size={24}/> 나의 정보 관리 (자동 저장 아님)</h3>
                    <div className="space-y-8">
