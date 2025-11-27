@@ -13,7 +13,7 @@ import {
 } from 'firebase/firestore';
 import { 
   Save, Trash2, Copy, FileText, Briefcase, User, PenTool, Layout, 
-  Database, Sparkles, Edit2, ChevronDown, ChevronUp, CheckSquare, Square, XCircle, LogOut, Lock, Mail, AlertCircle, CheckCircle2, ArrowLeft, Plus, Menu, ArrowDown, MousePointerClick, GripHorizontal
+  Database, Sparkles, Edit2, ChevronDown, ChevronUp, CheckSquare, Square, XCircle, LogOut, Lock, Mail, AlertCircle, CheckCircle2, ArrowLeft, Plus, Menu, ArrowDown, MousePointerClick, GripHorizontal, Info
 } from 'lucide-react';
 
 // --- [중요] Firebase Configuration ---
@@ -27,7 +27,6 @@ const firebaseConfig = {
   appId: "1:1028616419862:web:2f6635eb745d15543a1337",
   measurementId: "G-MQ32GG48GK"
 };
-
 // 앱 초기화
 let app, auth, db;
 try {
@@ -390,6 +389,8 @@ export default function App() {
   const [savingTarget, setSavingTarget] = useState(null);
   const [statusMsg, setStatusMsg] = useState(null); 
   const [editMode, setEditMode] = useState({ active: false, id: null, collection: null });
+  // [New] State for form highlighting
+  const [isFormHighlighted, setIsFormHighlighted] = useState(false);
 
   // Data Stores
   const [experiences, setExperiences] = useState([]);
@@ -591,9 +592,10 @@ export default function App() {
 
   const finishTutorial = () => setTutorialStep(0);
 
+  // --- Helper: Status Message ---
   const showStatus = (type, text) => {
     setStatusMsg({ type, text });
-    setTimeout(() => setStatusMsg(null), 3000);
+    setTimeout(() => setStatusMsg(null), 5000);
   };
 
   // --- CRUD Operations ---
@@ -658,6 +660,18 @@ export default function App() {
     setFormFn(item); 
     setEditMode({ active: true, id: item.id, collection: colName });
     window.scrollTo({ top: 0, behavior: 'smooth' });
+
+    // [New] Visual Cue (Flashing)
+    setIsFormHighlighted(true);
+    setTimeout(() => setIsFormHighlighted(false), 1500);
+
+    // [New] Message based on device width
+    const isMobile = window.innerWidth < 768;
+    const msg = isMobile 
+      ? "모든 수정이 완료후 저장버튼을 눌러주세요!" 
+      : "내용을 수정한 뒤 하단의 '수정 완료' 버튼을 눌러주세요.";
+    
+    showStatus('info', msg);
   };
 
   const cancelEdit = (clearFn) => {
@@ -945,9 +959,11 @@ ${selStyle ? `[Tone]: ${selStyle.tone} / [Focus]: ${selStyle.focus}` : '기본 �
           {/* Status Toast */}
           {statusMsg && (
             <div className={`absolute top-4 left-1/2 -translate-x-1/2 z-[70] p-3 rounded-full shadow-lg border animate-in slide-in-from-top-4 fade-in duration-200 flex items-center gap-2 font-medium ${
-                statusMsg.type === 'success' ? 'bg-green-100 border-green-200 text-green-800' : 'bg-red-100 border-red-200 text-red-800'
+                statusMsg.type === 'success' ? 'bg-green-100 border-green-200 text-green-800' : 
+                statusMsg.type === 'info' ? 'bg-blue-100 border-blue-200 text-blue-800' :
+                'bg-red-100 border-red-200 text-red-800'
             }`}>
-                {statusMsg.type === 'success' ? <CheckCircle2 size={18}/> : <AlertCircle size={18}/>}
+                {statusMsg.type === 'success' ? <CheckCircle2 size={18}/> : statusMsg.type === 'info' ? <Info size={18}/> : <AlertCircle size={18}/>}
                 {statusMsg.text}
             </div>
           )}
@@ -1085,7 +1101,7 @@ ${selStyle ? `[Tone]: ${selStyle.tone} / [Focus]: ${selStyle.focus}` : '기본 �
           {/* Experience Tab */}
           {activeTab === TABS.EXPERIENCE && (
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 h-full">
-               <div className="bg-white p-6 rounded-xl border border-gray-200 flex flex-col h-fit lg:h-full order-1 lg:order-none">
+               <div className={`bg-white p-6 rounded-xl border border-gray-200 flex flex-col h-fit lg:h-full order-1 lg:order-none ${isFormHighlighted ? 'ring-4 ring-yellow-300 transition-all duration-500' : ''}`}>
                   <div className="flex justify-between mb-4">
                      <h3 className="font-bold text-blue-800">{editMode.active && editMode.collection==='experiences' ? '경험 수정' : '새 경험 등록'}</h3>
                      {editMode.active && editMode.collection==='experiences' && <Button variant="ghost" onClick={() => cancelEdit(resetExpForm)}><XCircle size={14}/> 취소</Button>}
@@ -1114,7 +1130,7 @@ ${selStyle ? `[Tone]: ${selStyle.tone} / [Focus]: ${selStyle.focus}` : '기본 �
           {/* Company Tab */}
           {activeTab === TABS.COMPANY && (
              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 h-full">
-                <div className="bg-white p-6 rounded-xl border border-gray-200 flex flex-col h-fit lg:h-full order-1 lg:order-none">
+                <div className={`bg-white p-6 rounded-xl border border-gray-200 flex flex-col h-fit lg:h-full order-1 lg:order-none ${isFormHighlighted ? 'ring-4 ring-yellow-300 transition-all duration-500' : ''}`}>
                    <div className="flex justify-between mb-4">
                       <h3 className="font-bold text-blue-800">{editMode.active && editMode.collection==='companies' ? '기업 수정' : '새 기업 등록'}</h3>
                       {editMode.active && editMode.collection==='companies' && <Button variant="ghost" onClick={() => cancelEdit(resetCompForm)}><XCircle size={14}/> 취소</Button>}
@@ -1148,7 +1164,7 @@ ${selStyle ? `[Tone]: ${selStyle.tone} / [Focus]: ${selStyle.focus}` : '기본 �
           {/* Profile Tab */}
           {activeTab === TABS.PROFILE && (
              <div className="max-w-3xl mx-auto h-full overflow-y-auto custom-scrollbar p-1">
-                <div className="bg-white p-8 rounded-xl border border-gray-200 mb-20 md:mb-0">
+                <div className={`bg-white p-8 rounded-xl border border-gray-200 mb-20 md:mb-0 ${isFormHighlighted ? 'ring-4 ring-yellow-300 transition-all duration-500' : ''}`}>
                    <h3 className="font-bold text-xl mb-6 text-blue-800 flex items-center gap-2"><User size={24}/> 나의 정보 관리 (자동 저장 아님)</h3>
                    <div className="space-y-8">
                       {PROFILE_FIELDS.map(f => (
@@ -1174,7 +1190,7 @@ ${selStyle ? `[Tone]: ${selStyle.tone} / [Focus]: ${selStyle.focus}` : '기본 �
           {/* Style Tab */}
           {activeTab === TABS.STYLE && (
              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 h-full">
-                <div className="bg-white p-6 rounded-xl border border-gray-200 h-fit order-1 lg:order-none">
+                <div className={`bg-white p-6 rounded-xl border border-gray-200 h-fit order-1 lg:order-none ${isFormHighlighted ? 'ring-4 ring-yellow-300 transition-all duration-500' : ''}`}>
                    <h3 className="font-bold text-blue-800 mb-4">스타일 등록</h3>
                    <InputField label="톤 (Tone)" value={styleForm.tone} onChange={v => setStyleForm(p=>({...p, tone:v}))} placeholder="예: 진정성 있는" />
                    <InputField label="초점 (Focus)" value={styleForm.focus} onChange={v => setStyleForm(p=>({...p, focus:v}))} placeholder="예: 성과 중심" />
