@@ -426,7 +426,7 @@ export default function App() {
   const resultRef = useRef(null); 
   
   // Resize Logic States
-  const [resultHeight, setResultHeight] = useState(200); // Default reduced height
+  const [resultHeight, setResultHeight] = useState(200); 
   const isResizing = useRef(false);
   const startY = useRef(0);
   const startHeight = useRef(0);
@@ -434,12 +434,10 @@ export default function App() {
   // --- Resize Handlers ---
   const startResize = (e) => {
     isResizing.current = true;
-    // Mobile touch or Mouse
     const clientY = e.touches ? e.touches[0].clientY : e.clientY;
     startY.current = clientY;
     startHeight.current = resultHeight;
     
-    // Prevent scrolling while resizing on mobile
     if(e.touches) document.body.style.overflow = 'hidden'; 
     
     window.addEventListener('mousemove', handleResizeMove);
@@ -452,19 +450,16 @@ export default function App() {
     if (!isResizing.current) return;
     
     const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-    // Calculate delta: Moving UP decreases clientY but should INCREASE height
     const delta = startY.current - clientY; 
-    
-    // Min height 100px, Max height 80% of screen
     const newHeight = Math.max(100, Math.min(window.innerHeight * 0.8, startHeight.current + delta));
     setResultHeight(newHeight);
     
-    if(e.cancelable) e.preventDefault(); // Stop scrolling
+    if(e.cancelable) e.preventDefault(); 
   };
 
   const stopResize = () => {
     isResizing.current = false;
-    document.body.style.overflow = ''; // Restore scrolling
+    document.body.style.overflow = '';
     window.removeEventListener('mousemove', handleResizeMove);
     window.removeEventListener('mouseup', stopResize);
     window.removeEventListener('touchmove', handleResizeMove);
@@ -486,13 +481,11 @@ export default function App() {
   useEffect(() => {
     if (!user || !db) return;
     
-    // 1. Experiences & Default Injection
     const subExp = onSnapshot(
       query(collection(db, 'artifacts', appId, 'users', user.uid, 'experiences'), orderBy('createdAt', 'desc')),
       async (snapshot) => {
         const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
         setExperiences(data);
-        
         if (data.length === 0 && !isExperienceChecked.current) {
           isExperienceChecked.current = true;
           try {
@@ -509,13 +502,11 @@ export default function App() {
       }
     );
 
-    // 2. Companies & Default Data Injection
     const subComp = onSnapshot(
       query(collection(db, 'artifacts', appId, 'users', user.uid, 'companies'), orderBy('createdAt', 'desc')),
       async (snapshot) => {
         const loadedCompanies = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
         setCompanies(loadedCompanies);
-
         if (loadedCompanies.length === 0 && !isCompanyChecked.current) {
           isCompanyChecked.current = true;
           try {
@@ -532,7 +523,6 @@ export default function App() {
       }
     );
 
-    // 3. Profile (Singleton) & Default Injection
     const subProf = onSnapshot(
       query(collection(db, 'artifacts', appId, 'users', user.uid, 'profiles'), firestoreLimit(1)),
       async (snapshot) => {
@@ -567,13 +557,11 @@ export default function App() {
        }
     );
 
-    // 4. Styles & Default Injection
     const subStyle = onSnapshot(
       query(collection(db, 'artifacts', appId, 'users', user.uid, 'styles'), orderBy('createdAt', 'desc')),
       async (snapshot) => {
         const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
         setStyles(data);
-
         if (data.length === 0 && !isStyleChecked.current) {
           isStyleChecked.current = true;
           try {
@@ -605,7 +593,7 @@ export default function App() {
 
   const showStatus = (type, text) => {
     setStatusMsg({ type, text });
-    setTimeout(() => setStatusMsg(null), 5000);
+    setTimeout(() => setStatusMsg(null), 3000);
   };
 
   // --- CRUD Operations ---
@@ -777,7 +765,7 @@ ${selStyle ? `[Tone]: ${selStyle.tone} / [Focus]: ${selStyle.focus}` : '기본 �
 
   const copyToClipboard = () => {
     if (!generatedPrompt) return;
-    navigator.clipboard.writeText(generatedPrompt).then(() => alert('복사 완료!')).catch(() => alert('복사 실패'));
+    navigator.clipboard.writeText(generatedPrompt).then(() => showStatus('success', '클립보드에 복사되었습니다!')).catch(() => alert('복사 실패'));
   };
 
   // --- Helper Components ---
@@ -945,10 +933,24 @@ ${selStyle ? `[Tone]: ${selStyle.tone} / [Focus]: ${selStyle.focus}` : '기본 �
             {activeTab === TABS.PROFILE && "나의 정보 관리"}
             {activeTab === TABS.STYLE && "자소서 문체 설정"}
           </h2>
-          {activeTab === TABS.GENERATOR && generatedPrompt && <Button onClick={copyToClipboard} icon={Copy}>복사</Button>}
+          <div className="flex items-center gap-4">
+            {activeTab === TABS.GENERATOR && generatedPrompt && <Button onClick={copyToClipboard} icon={Copy}>복사</Button>}
+            <button onClick={handleLogout} className="text-gray-500 hover:text-red-600 flex items-center gap-1 font-medium text-sm transition-colors">
+              <LogOut size={18}/> 로그아웃
+            </button>
+          </div>
         </header>
 
-        <main className="flex-1 overflow-y-auto p-4 md:p-8 bg-gray-100">
+        <main className="flex-1 overflow-y-auto p-4 md:p-8 bg-gray-100 relative">
+          {/* Status Toast */}
+          {statusMsg && (
+            <div className={`absolute top-4 left-1/2 -translate-x-1/2 z-[70] p-3 rounded-full shadow-lg border animate-in slide-in-from-top-4 fade-in duration-200 flex items-center gap-2 font-medium ${
+                statusMsg.type === 'success' ? 'bg-green-100 border-green-200 text-green-800' : 'bg-red-100 border-red-200 text-red-800'
+            }`}>
+                {statusMsg.type === 'success' ? <CheckCircle2 size={18}/> : <AlertCircle size={18}/>}
+                {statusMsg.text}
+            </div>
+          )}
           
           {/* Generator Tab */}
           {activeTab === TABS.GENERATOR && (
@@ -1055,19 +1057,22 @@ ${selStyle ? `[Tone]: ${selStyle.tone} / [Focus]: ${selStyle.focus}` : '기본 �
                  <Button className="w-full py-3 shadow-lg text-lg font-bold" onClick={generatePrompt} disabled={savingTarget === 'generator'} icon={Sparkles}>프롬프트 생성</Button>
               </div>
 
-              {/* Right Side: Result Area (Modified for Mobile Resizing) */}
+              {/* Right Side: Result Area (Modified for Mobile Resizing & Click Copy) */}
               <div 
                 ref={resultRef} 
+                onClick={copyToClipboard} // Click to Copy
                 style={{ height: window.innerWidth < 768 ? `${resultHeight}px` : 'auto', minHeight: window.innerWidth < 768 ? '100px' : '0' }}
-                className="w-full md:w-5/12 bg-slate-900 rounded-xl p-6 text-slate-200 overflow-y-auto whitespace-pre-wrap font-mono text-sm border border-slate-700 mb-32 md:mb-0 relative transition-height duration-100 ease-out"
+                className="w-full md:w-5/12 bg-slate-900 rounded-xl p-6 text-slate-200 overflow-y-auto whitespace-pre-wrap font-mono text-sm border border-slate-700 mb-32 md:mb-0 relative transition-height duration-100 ease-out cursor-pointer hover:bg-slate-800 transition-colors"
+                title="클릭하여 복사"
               >
                  {/* Mobile Resize Handle */}
                  <div 
                     className="md:hidden absolute top-0 left-0 right-0 h-8 flex items-center justify-center bg-slate-800 border-b border-slate-700 cursor-row-resize rounded-t-xl touch-none"
                     onTouchStart={startResize}
                     onMouseDown={startResize}
+                    onClick={(e) => e.stopPropagation()} // Prevent copy on resize
                  >
-                    <div className="w-12 h-1.5 bg-slate-600 rounded-full" />
+                    <GripHorizontal className="text-slate-500" />
                  </div>
                  
                  <div className="mt-4 md:mt-0">
@@ -1090,12 +1095,6 @@ ${selStyle ? `[Tone]: ${selStyle.tone} / [Focus]: ${selStyle.focus}` : '기본 �
                         <InputField key={q.id} label={q.label} value={expForm[q.id]} onChange={v => setExpForm(p => ({...p, [q.id]: v}))} multiline={q.id!=='title'} />
                      ))}
                      <Button className="w-full" onClick={() => handleSave('experience', 'experiences', expForm, resetExpForm)} disabled={savingTarget === 'experience'} icon={Save}>{savingTarget === 'experience' ? '저장 중...' : '저장하기'}</Button>
-                     {statusMsg && (
-                        <div className={`p-3 rounded text-sm flex items-center gap-2 ${statusMsg.type === 'success' ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'}`}>
-                           {statusMsg.type === 'success' ? <CheckCircle2 size={16}/> : <AlertCircle size={16}/>}
-                           {statusMsg.text}
-                        </div>
-                     )}
                   </div>
                </div>
                <div className="flex flex-col h-auto lg:h-full lg:overflow-hidden order-2 lg:order-none mt-8 lg:mt-0">
@@ -1127,12 +1126,6 @@ ${selStyle ? `[Tone]: ${selStyle.tone} / [Focus]: ${selStyle.focus}` : '기본 �
                          <InputField key={f.id} label={f.label} value={compForm[f.id]} onChange={v=>setCompForm(p=>({...p, [f.id]:v}))} multiline placeholder={f.placeholder} />
                       ))}
                       <Button className="w-full" onClick={() => handleSave('company', 'companies', compForm, resetCompForm)} disabled={savingTarget === 'company'} icon={Save}>{savingTarget === 'company' ? '저장 중...' : '저장하기'}</Button>
-                      {statusMsg && (
-                        <div className={`p-3 rounded text-sm flex items-center gap-2 ${statusMsg.type === 'success' ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'}`}>
-                           {statusMsg.type === 'success' ? <CheckCircle2 size={16}/> : <AlertCircle size={16}/>}
-                           {statusMsg.text}
-                        </div>
-                     )}
                    </div>
                 </div>
                 <div className="flex flex-col h-auto lg:h-full lg:overflow-hidden order-2 lg:order-none mt-8 lg:mt-0">
@@ -1171,12 +1164,6 @@ ${selStyle ? `[Tone]: ${selStyle.tone} / [Focus]: ${selStyle.focus}` : '기본 �
                         <Button className="w-full py-3" onClick={handleSaveProfile} disabled={savingTarget === 'profile'} icon={Save}>
                            {savingTarget === 'profile' ? '저장 중...' : (profile ? '정보 업데이트' : '정보 저장')}
                         </Button>
-                        {statusMsg && (
-                          <div className={`p-3 rounded text-sm flex items-center gap-2 mt-2 ${statusMsg.type === 'success' ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'}`}>
-                             {statusMsg.type === 'success' ? <CheckCircle2 size={16}/> : <AlertCircle size={16}/>}
-                             {statusMsg.text}
-                          </div>
-                       )}
                         <p className="text-xs text-gray-400 text-center mt-2">* 작성 후 반드시 저장 버튼을 눌러주세요.</p>
                       </div>
                    </div>
@@ -1192,12 +1179,6 @@ ${selStyle ? `[Tone]: ${selStyle.tone} / [Focus]: ${selStyle.focus}` : '기본 �
                    <InputField label="톤 (Tone)" value={styleForm.tone} onChange={v => setStyleForm(p=>({...p, tone:v}))} placeholder="예: 진정성 있는" />
                    <InputField label="초점 (Focus)" value={styleForm.focus} onChange={v => setStyleForm(p=>({...p, focus:v}))} placeholder="예: 성과 중심" />
                    <Button className="w-full mt-4" onClick={() => handleSave('style', 'styles', styleForm, () => setStyleForm({tone:'', focus:''}))} disabled={savingTarget === 'style'}>{savingTarget === 'style' ? '저장 중...' : '저장'}</Button>
-                   {statusMsg && (
-                        <div className={`p-3 rounded text-sm flex items-center gap-2 mt-2 ${statusMsg.type === 'success' ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'}`}>
-                           {statusMsg.type === 'success' ? <CheckCircle2 size={16}/> : <AlertCircle size={16}/>}
-                           {statusMsg.text}
-                        </div>
-                     )}
                 </div>
                 <div className="overflow-y-auto pr-2 custom-scrollbar h-full order-2 lg:order-none">
                    <div className="grid gap-4 pb-24 lg:pb-10 pr-2 custom-scrollbar lg:overflow-y-auto h-auto lg:h-full">
