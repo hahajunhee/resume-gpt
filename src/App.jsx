@@ -27,6 +27,7 @@ const firebaseConfig = {
   appId: "1:1028616419862:web:2f6635eb745d15543a1337",
   measurementId: "G-MQ32GG48GK"
 };
+
 // 앱 초기화
 let app, auth, db;
 try {
@@ -983,122 +984,128 @@ ${selStyle ? `[Tone]: ${selStyle.tone} / [Focus]: ${selStyle.focus}` : '기본 �
           {/* Generator Tab */}
           {activeTab === TABS.GENERATOR && (
             <div className="flex flex-col md:flex-row gap-6 h-full relative">
-              {/* Left Side: Scrollable Inputs Area */}
-              <div className="w-full md:w-7/12 flex flex-col gap-6 overflow-y-auto pr-1 custom-scrollbar pb-32 md:pb-0">
-                 <div className="bg-white p-4 md:p-6 rounded-xl shadow-sm border border-gray-200 space-y-6">
-                    <div>
-                      <label className="block text-xs font-bold text-gray-500 mb-1">질문 유형 / 글자수</label>
-                      <div className="flex gap-2">
-                         <input type="text" className="flex-1 p-2 border rounded" value={selections.qType} onChange={e => setSelections({...selections, qType:e.target.value})} list="qs" placeholder="질문 유형"/>
-                         <datalist id="qs"><option value="지원동기"/><option value="성장과정"/></datalist>
-                         <input type="number" className="w-20 p-2 border rounded" value={selections.limit} onChange={e => setSelections({...selections, limit:e.target.value})}/>
-                      </div>
+              {/* Left Side: Inputs Area */}
+              <div className="w-full md:w-7/12 flex flex-col h-full overflow-hidden">
+                 <div className="bg-white rounded-xl shadow-sm border border-gray-200 flex flex-col h-full">
+                    {/* Header */}
+                    <div className="p-4 border-b border-gray-100 shrink-0">
+                      <h3 className="font-bold text-lg text-gray-800">재료 선택</h3>
                     </div>
 
-                    <div>
-                       <label className="block text-sm font-bold text-gray-700 mb-2">기업 선택</label>
-                       <select className="w-full p-2 border rounded bg-blue-50" value={selections.compId} onChange={e => setSelections({...selections, compId:e.target.value})}>
-                          <option value="">선택하세요</option>
-                          {companies.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-                       </select>
-                       {selections.compId && (
-                         <div className="mt-2 space-y-1 bg-gray-50 p-2 rounded">
-                            {COMP_FIELDS.map(f => {
-                               const c = companies.find(x=>x.id===selections.compId);
-                               if(!c?.[f.id]) return null;
+                    {/* Scrollable Content */}
+                    <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-6 custom-scrollbar">
+                      <div>
+                        <label className="block text-xs font-bold text-gray-500 mb-1">질문 유형 / 글자수</label>
+                        <div className="flex gap-2">
+                           <input type="text" className="flex-1 p-2 border rounded" value={selections.qType} onChange={e => setSelections({...selections, qType:e.target.value})} list="qs" placeholder="질문 유형"/>
+                           <datalist id="qs"><option value="지원동기"/><option value="성장과정"/></datalist>
+                           <input type="number" className="w-20 p-2 border rounded" value={selections.limit} onChange={e => setSelections({...selections, limit:e.target.value})}/>
+                        </div>
+                      </div>
+
+                      <div>
+                         <label className="block text-sm font-bold text-gray-700 mb-2">기업 선택</label>
+                         <select className="w-full p-2 border rounded bg-blue-50" value={selections.compId} onChange={e => setSelections({...selections, compId:e.target.value})}>
+                            <option value="">선택하세요</option>
+                            {companies.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                         </select>
+                         {selections.compId && (
+                           <div className="mt-2 space-y-1 bg-gray-50 p-2 rounded">
+                              {COMP_FIELDS.map(f => {
+                                 const c = companies.find(x=>x.id===selections.compId);
+                                 if(!c?.[f.id]) return null;
+                                 return (
+                                   <label key={f.id} className="flex items-start gap-2 text-xs cursor-pointer p-1 hover:bg-white rounded">
+                                      <input type="checkbox" className="mt-1 shrink-0" checked={!!selections.compFields[f.id]} onChange={() => setSelections(p => ({...p, compFields: {...p.compFields, [f.id]: !p.compFields[f.id]}}))} />
+                                      <div>
+                                        <span className="font-bold block text-gray-700">{f.label.split('?')[0]}</span>
+                                        <span className="text-gray-500 block leading-tight">{c[f.id]}</span>
+                                      </div>
+                                   </label>
+                                 )
+                              })}
+                           </div>
+                         )}
+                      </div>
+
+                      <div>
+                         <label className="block text-sm font-bold text-gray-700 mb-2">경험 선택 ({selections.expIds.length})</label>
+                         <div className="max-h-40 overflow-y-auto border rounded bg-gray-50 p-2 space-y-1">
+                            {experiences.map(e => (
+                               <div key={e.id} onClick={() => setSelections(p => ({...p, expIds: p.expIds.includes(e.id) ? p.expIds.filter(x=>x!==e.id) : [...p.expIds, e.id]}))} 
+                                    className={`p-2 rounded text-sm cursor-pointer flex gap-2 ${selections.expIds.includes(e.id) ? 'bg-blue-100 text-blue-800' : 'hover:bg-gray-200'}`}>
+                                  {selections.expIds.includes(e.id)?<CheckSquare size={16} className="shrink-0"/>:<Square size={16} className="shrink-0"/>} <span className="truncate">{e.title}</span>
+                               </div>
+                            ))}
+                         </div>
+                      </div>
+
+                      <div>
+                         <label className="block text-sm font-bold text-gray-700 mb-2">내 정보 포함</label>
+                         <div className="bg-gray-50 p-2 rounded space-y-2">
+                            {PROFILE_FIELDS.map(f => {
+                               const savedItems = profile?.[f.id] || [];
                                return (
-                                 <label key={f.id} className="flex items-start gap-2 text-xs cursor-pointer p-1 hover:bg-white rounded">
-                                    <input type="checkbox" className="mt-1 shrink-0" checked={!!selections.compFields[f.id]} onChange={() => setSelections(p => ({...p, compFields: {...p.compFields, [f.id]: !p.compFields[f.id]}}))} />
-                                    <div>
-                                      <span className="font-bold block text-gray-700">{f.label.split('?')[0]}</span>
-                                      <span className="text-gray-500 block leading-tight">{c[f.id]}</span>
-                                    </div>
-                                 </label>
+                                 <div key={f.id}>
+                                    <p className="text-xs font-bold text-gray-500 mb-1">{f.label}</p>
+                                    {Array.isArray(savedItems) && savedItems.length > 0 ? (
+                                      <div className="flex flex-wrap gap-2">
+                                        {savedItems.map((item, idx) => (
+                                          <label key={idx} className={`flex items-center gap-1 text-xs px-2 py-1 rounded cursor-pointer border ${selections.profDetail[f.id]?.includes(item) ? 'bg-blue-100 border-blue-300 text-blue-800' : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-100'}`}>
+                                             <input type="checkbox" className="hidden" checked={selections.profDetail[f.id]?.includes(item)} onChange={() => toggleProfileItem(f.id, item)} />
+                                             {selections.profDetail[f.id]?.includes(item) ? <CheckCircle2 size={12}/> : <Square size={12}/>}
+                                             {item}
+                                          </label>
+                                        ))}
+                                      </div>
+                                    ) : (
+                                      <p className="text-xs text-gray-400 pl-1">(작성된 항목 없음)</p>
+                                    )}
+                                 </div>
                                )
                             })}
                          </div>
-                       )}
+                      </div>
+
+                      <div className="pb-10 md:pb-0">
+                          <label className="block text-sm font-bold text-gray-700 mb-2">문체 스타일 선택</label>
+                          <select className="w-full p-2 border rounded bg-gray-50" value={selections.styleId} onChange={e => setSelections({...selections, styleId:e.target.value})}>
+                              <option value="">기본 (선택 안 함)</option>
+                              {styles.map(s => (
+                                  <option key={s.id} value={s.id}>{s.tone} / {s.focus}</option>
+                              ))}
+                          </select>
+                      </div>
                     </div>
 
-                    <div>
-                       <label className="block text-sm font-bold text-gray-700 mb-2">경험 선택 ({selections.expIds.length})</label>
-                       <div className="max-h-40 overflow-y-auto border rounded bg-gray-50 p-2 space-y-1">
-                          {experiences.map(e => (
-                             <div key={e.id} onClick={() => setSelections(p => ({...p, expIds: p.expIds.includes(e.id) ? p.expIds.filter(x=>x!==e.id) : [...p.expIds, e.id]}))} 
-                                  className={`p-2 rounded text-sm cursor-pointer flex gap-2 ${selections.expIds.includes(e.id) ? 'bg-blue-100 text-blue-800' : 'hover:bg-gray-200'}`}>
-                                {selections.expIds.includes(e.id)?<CheckSquare size={16} className="shrink-0"/>:<Square size={16} className="shrink-0"/>} <span className="truncate">{e.title}</span>
-                             </div>
-                          ))}
-                       </div>
-                    </div>
-
-                    <div>
-                       <label className="block text-sm font-bold text-gray-700 mb-2">내 정보 포함</label>
-                       <div className="bg-gray-50 p-2 rounded space-y-2">
-                          {PROFILE_FIELDS.map(f => {
-                             const savedItems = profile?.[f.id] || [];
-                             return (
-                               <div key={f.id}>
-                                  <p className="text-xs font-bold text-gray-500 mb-1">{f.label}</p>
-                                  {Array.isArray(savedItems) && savedItems.length > 0 ? (
-                                    <div className="flex flex-wrap gap-2">
-                                      {savedItems.map((item, idx) => (
-                                        <label key={idx} className={`flex items-center gap-1 text-xs px-2 py-1 rounded cursor-pointer border ${selections.profDetail[f.id]?.includes(item) ? 'bg-blue-100 border-blue-300 text-blue-800' : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-100'}`}>
-                                           <input type="checkbox" className="hidden" checked={selections.profDetail[f.id]?.includes(item)} onChange={() => toggleProfileItem(f.id, item)} />
-                                           {selections.profDetail[f.id]?.includes(item) ? <CheckCircle2 size={12}/> : <Square size={12}/>}
-                                           {item}
-                                        </label>
-                                      ))}
-                                    </div>
-                                  ) : (
-                                    <p className="text-xs text-gray-400 pl-1">(작성된 항목 없음)</p>
-                                  )}
-                               </div>
-                             )
-                          })}
-                       </div>
-                    </div>
-
-                    <div>
-                        <label className="block text-sm font-bold text-gray-700 mb-2">문체 스타일 선택</label>
-                        <select className="w-full p-2 border rounded bg-gray-50" value={selections.styleId} onChange={e => setSelections({...selections, styleId:e.target.value})}>
-                            <option value="">기본 (선택 안 함)</option>
-                            {styles.map(s => (
-                                <option key={s.id} value={s.id}>{s.tone} / {s.focus}</option>
-                            ))}
-                        </select>
-                    </div>
-                    
-                    {/* Desktop Button (Hidden on Mobile) */}
-                    <div className="hidden md:block">
-                       <Button className="w-full" onClick={generatePrompt} disabled={savingTarget === 'generator'} icon={Sparkles}>프롬프트 생성</Button>
+                    {/* Desktop Fixed Button */}
+                    <div className="hidden md:block p-4 border-t border-gray-100 shrink-0">
+                       <Button className="w-full py-3" onClick={generatePrompt} disabled={savingTarget === 'generator'} icon={Sparkles}>프롬프트 생성</Button>
                     </div>
                  </div>
               </div>
 
-              {/* Mobile Fixed Button & Scroll Hint (Visible only on mobile) */}
+              {/* Mobile Fixed Button (Floating) */}
               <div className="md:hidden fixed bottom-16 left-0 right-0 p-4 bg-white border-t border-gray-200 z-50 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)]">
-                 {/* Scroll Hint Arrow */}
                  <div className="absolute -top-12 left-1/2 -translate-x-1/2 text-blue-500 animate-bounce pointer-events-none bg-white/90 rounded-full p-2 shadow-sm border border-gray-100">
                     <ArrowDown size={20} />
                  </div>
                  <Button className="w-full py-3 shadow-lg text-lg font-bold" onClick={generatePrompt} disabled={savingTarget === 'generator'} icon={Sparkles}>프롬프트 생성</Button>
               </div>
 
-              {/* Right Side: Result Area (Modified for Mobile Resizing & Click Copy) */}
+              {/* Right Side: Result Area */}
               <div 
                 ref={resultRef} 
-                onClick={copyToClipboard} // Click to Copy
+                onClick={copyToClipboard} 
                 style={{ height: window.innerWidth < 768 ? `${resultHeight}px` : 'auto', minHeight: window.innerWidth < 768 ? '100px' : '0' }}
                 className="w-full md:w-5/12 bg-slate-900 rounded-xl p-6 text-slate-200 overflow-y-auto whitespace-pre-wrap font-mono text-sm border border-slate-700 mb-32 md:mb-0 relative transition-height duration-100 ease-out cursor-pointer hover:bg-slate-800 transition-colors"
                 title="클릭하여 복사"
               >
-                 {/* Mobile Resize Handle */}
                  <div 
                     className="md:hidden absolute top-0 left-0 right-0 h-8 flex items-center justify-center bg-slate-800 border-b border-slate-700 cursor-row-resize rounded-t-xl touch-none"
                     onTouchStart={startResize}
                     onMouseDown={startResize}
-                    onClick={(e) => e.stopPropagation()} // Prevent copy on resize
+                    onClick={(e) => e.stopPropagation()} 
                  >
                     <GripHorizontal className="text-slate-500" />
                  </div>
@@ -1112,22 +1119,31 @@ ${selStyle ? `[Tone]: ${selStyle.tone} / [Focus]: ${selStyle.focus}` : '기본 �
 
           {/* Experience Tab */}
           {activeTab === TABS.EXPERIENCE && (
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 h-full">
-               <div className={`bg-white p-6 rounded-xl border border-gray-200 flex flex-col h-fit lg:h-full order-1 lg:order-none ${isFormHighlighted ? 'ring-4 ring-yellow-300 transition-all duration-500' : ''}`}>
-                  <div className="flex justify-between mb-4">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 h-full">
+               <div className={`bg-white rounded-xl border border-gray-200 flex flex-col h-full order-1 lg:order-none overflow-hidden ${isFormHighlighted ? 'ring-4 ring-yellow-300 transition-all duration-500' : ''}`}>
+                  <div className="flex justify-between p-6 border-b border-gray-100 shrink-0 bg-white">
                      <h3 className="font-bold text-blue-800">{editMode.active && editMode.collection==='experiences' ? '경험 수정' : '새 경험 등록'}</h3>
                      {editMode.active && editMode.collection==='experiences' && <Button variant="ghost" onClick={() => cancelEdit(resetExpForm)}><XCircle size={14}/> 취소</Button>}
                   </div>
-                  <div className="flex-1 lg:overflow-y-auto pr-2 custom-scrollbar space-y-4 pb-24 lg:pb-0">
-                     {EXP_QUESTIONS.map(q => (
-                        <InputField key={q.id} label={q.label} value={expForm[q.id]} onChange={v => setExpForm(p => ({...p, [q.id]: v}))} multiline={q.id!=='title'} isHighlighted={isFormHighlighted} />
-                     ))}
+                  
+                  {/* Scrollable Inputs */}
+                  <div className="flex-1 overflow-y-auto p-6 custom-scrollbar">
+                     <div className="space-y-4">
+                       {EXP_QUESTIONS.map(q => (
+                          <InputField key={q.id} label={q.label} value={expForm[q.id]} onChange={v => setExpForm(p => ({...p, [q.id]: v}))} multiline={q.id!=='title'} isHighlighted={isFormHighlighted} />
+                       ))}
+                     </div>
+                  </div>
+
+                  {/* Fixed Save Button */}
+                  <div className="p-4 border-t border-gray-100 shrink-0 bg-white pb-24 lg:pb-4">
                      <Button className="w-full" onClick={() => handleSave('experience', 'experiences', expForm, resetExpForm)} disabled={savingTarget === 'experience'} icon={Save}>{savingTarget === 'experience' ? '저장 중...' : '저장하기'}</Button>
                   </div>
                </div>
-               <div className="flex flex-col h-auto lg:h-full lg:overflow-hidden order-2 lg:order-none mt-8 lg:mt-0">
-                  <h3 className="font-bold text-gray-700 mb-4">목록 ({experiences.length})</h3>
-                  <div className="grid gap-4 pb-24 lg:pb-10 pr-2 custom-scrollbar lg:overflow-y-auto h-auto lg:h-full">
+
+               <div className="flex flex-col h-full overflow-hidden order-2 lg:order-none">
+                  <h3 className="font-bold text-gray-700 mb-4 shrink-0">목록 ({experiences.length})</h3>
+                  <div className="grid gap-4 pb-24 lg:pb-10 pr-2 custom-scrollbar overflow-y-auto flex-1">
                      {experiences.map(e => (
                         <Card key={e.id} title={e.title} onDelete={()=>handleDelete('experiences', e.id)} onEdit={()=>handleEdit('experiences', e, setExpForm)} 
                               expandedContent={<div className="space-y-2 text-sm">{EXP_QUESTIONS.slice(1).map(q => e[q.id] && <div key={q.id}><strong className="text-xs text-gray-500">{q.label}</strong><p>{e[q.id]}</p></div>)}</div>}>
@@ -1141,24 +1157,33 @@ ${selStyle ? `[Tone]: ${selStyle.tone} / [Focus]: ${selStyle.focus}` : '기본 �
 
           {/* Company Tab */}
           {activeTab === TABS.COMPANY && (
-             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 h-full">
-                <div className={`bg-white p-6 rounded-xl border border-gray-200 flex flex-col h-fit lg:h-full order-1 lg:order-none ${isFormHighlighted ? 'ring-4 ring-yellow-300 transition-all duration-500' : ''}`}>
-                   <div className="flex justify-between mb-4">
+             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 h-full">
+                <div className={`bg-white rounded-xl border border-gray-200 flex flex-col h-full order-1 lg:order-none overflow-hidden ${isFormHighlighted ? 'ring-4 ring-yellow-300 transition-all duration-500' : ''}`}>
+                   <div className="flex justify-between p-6 border-b border-gray-100 shrink-0 bg-white">
                       <h3 className="font-bold text-blue-800">{editMode.active && editMode.collection==='companies' ? '기업 수정' : '새 기업 등록'}</h3>
                       {editMode.active && editMode.collection==='companies' && <Button variant="ghost" onClick={() => cancelEdit(resetCompForm)}><XCircle size={14}/> 취소</Button>}
                    </div>
-                   <div className="flex-1 lg:overflow-y-auto pr-2 custom-scrollbar space-y-4 pb-24 lg:pb-0">
-                      <InputField label="기업명" value={compForm.name} onChange={v=>setCompForm(p=>({...p, name:v}))} isHighlighted={isFormHighlighted} />
-                      <InputField label="직무" value={compForm.role} onChange={v=>setCompForm(p=>({...p, role:v}))} isHighlighted={isFormHighlighted} />
-                      {COMP_FIELDS.slice(2).map(f => (
-                         <InputField key={f.id} label={f.label} value={compForm[f.id]} onChange={v=>setCompForm(p=>({...p, [f.id]:v}))} multiline placeholder={f.placeholder} isHighlighted={isFormHighlighted} />
-                      ))}
+
+                   {/* Scrollable Inputs */}
+                   <div className="flex-1 overflow-y-auto p-6 custom-scrollbar">
+                      <div className="space-y-4">
+                        <InputField label="기업명" value={compForm.name} onChange={v=>setCompForm(p=>({...p, name:v}))} isHighlighted={isFormHighlighted} />
+                        <InputField label="직무" value={compForm.role} onChange={v=>setCompForm(p=>({...p, role:v}))} isHighlighted={isFormHighlighted} />
+                        {COMP_FIELDS.slice(2).map(f => (
+                           <InputField key={f.id} label={f.label} value={compForm[f.id]} onChange={v=>setCompForm(p=>({...p, [f.id]:v}))} multiline placeholder={f.placeholder} isHighlighted={isFormHighlighted} />
+                        ))}
+                      </div>
+                   </div>
+
+                   {/* Fixed Save Button */}
+                   <div className="p-4 border-t border-gray-100 shrink-0 bg-white pb-24 lg:pb-4">
                       <Button className="w-full" onClick={() => handleSave('company', 'companies', compForm, resetCompForm)} disabled={savingTarget === 'company'} icon={Save}>{savingTarget === 'company' ? '저장 중...' : '저장하기'}</Button>
                    </div>
                 </div>
-                <div className="flex flex-col h-auto lg:h-full lg:overflow-hidden order-2 lg:order-none mt-8 lg:mt-0">
-                   <h3 className="font-bold text-gray-700 mb-4">목록 ({companies.length})</h3>
-                   <div className="grid gap-4 pb-24 lg:pb-10 pr-2 custom-scrollbar lg:overflow-y-auto h-auto lg:h-full">
+
+                <div className="flex flex-col h-full overflow-hidden order-2 lg:order-none">
+                   <h3 className="font-bold text-gray-700 mb-4 shrink-0">목록 ({companies.length})</h3>
+                   <div className="grid gap-4 pb-24 lg:pb-10 pr-2 custom-scrollbar overflow-y-auto flex-1">
                       {companies.map(c => (
                          <Card key={c.id} title={`${c.name} (${c.role})`} onDelete={()=>handleDelete('companies', c.id)} onEdit={()=>handleEdit('companies', c, setCompForm)}
                                expandedContent={<div className="space-y-2 text-sm">{COMP_FIELDS.slice(2).map(f => c[f.id] && <div key={f.id}><strong className="text-xs text-gray-500">{f.label}</strong><p>{c[f.id]}</p></div>)}</div>}>
@@ -1189,7 +1214,7 @@ ${selStyle ? `[Tone]: ${selStyle.tone} / [Focus]: ${selStyle.focus}` : '기본 �
                             isHighlighted={isFormHighlighted}
                          />
                       ))}
-                      <div className="pt-4 border-t">
+                      <div className="pt-4 border-t pb-20 md:pb-0">
                         <Button className="w-full py-3" onClick={handleSaveProfile} disabled={savingTarget === 'profile'} icon={Save}>
                            {savingTarget === 'profile' ? '저장 중...' : (profile ? '정보 업데이트' : '정보 저장')}
                         </Button>
@@ -1202,15 +1227,24 @@ ${selStyle ? `[Tone]: ${selStyle.tone} / [Focus]: ${selStyle.focus}` : '기본 �
 
           {/* Style Tab */}
           {activeTab === TABS.STYLE && (
-             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 h-full">
-                <div className={`bg-white p-6 rounded-xl border border-gray-200 h-fit order-1 lg:order-none ${isFormHighlighted ? 'ring-4 ring-yellow-300 transition-all duration-500' : ''}`}>
-                   <h3 className="font-bold text-blue-800 mb-4">스타일 등록</h3>
-                   <InputField label="톤 (Tone)" value={styleForm.tone} onChange={v => setStyleForm(p=>({...p, tone:v}))} placeholder="예: 진정성 있는" isHighlighted={isFormHighlighted} />
-                   <InputField label="초점 (Focus)" value={styleForm.focus} onChange={v => setStyleForm(p=>({...p, focus:v}))} placeholder="예: 성과 중심" isHighlighted={isFormHighlighted} />
-                   <Button className="w-full mt-4" onClick={() => handleSave('style', 'styles', styleForm, () => setStyleForm({tone:'', focus:''}))} disabled={savingTarget === 'style'}>{savingTarget === 'style' ? '저장 중...' : '저장'}</Button>
+             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 h-full">
+                <div className={`bg-white rounded-xl border border-gray-200 flex flex-col h-fit lg:h-full order-1 lg:order-none overflow-hidden ${isFormHighlighted ? 'ring-4 ring-yellow-300 transition-all duration-500' : ''}`}>
+                   <div className="p-6 border-b border-gray-100 shrink-0 bg-white">
+                      <h3 className="font-bold text-blue-800 mb-0">스타일 등록</h3>
+                   </div>
+
+                   <div className="flex-1 overflow-y-auto p-6 custom-scrollbar space-y-4">
+                      <InputField label="톤 (Tone)" value={styleForm.tone} onChange={v => setStyleForm(p=>({...p, tone:v}))} placeholder="예: 진정성 있는" isHighlighted={isFormHighlighted} />
+                      <InputField label="초점 (Focus)" value={styleForm.focus} onChange={v => setStyleForm(p=>({...p, focus:v}))} placeholder="예: 성과 중심" isHighlighted={isFormHighlighted} />
+                   </div>
+
+                   <div className="p-4 border-t border-gray-100 shrink-0 bg-white pb-24 lg:pb-4">
+                      <Button className="w-full" onClick={() => handleSave('style', 'styles', styleForm, () => setStyleForm({tone:'', focus:''}))} disabled={savingTarget === 'style'}>{savingTarget === 'style' ? '저장 중...' : '저장'}</Button>
+                   </div>
                 </div>
-                <div className="overflow-y-auto pr-2 custom-scrollbar h-full order-2 lg:order-none">
-                   <div className="grid gap-4 pb-24 lg:pb-10 pr-2 custom-scrollbar lg:overflow-y-auto h-auto lg:h-full">
+
+                <div className="flex flex-col h-full overflow-hidden order-2 lg:order-none">
+                   <div className="grid gap-4 pb-24 lg:pb-10 pr-2 custom-scrollbar overflow-y-auto flex-1">
                       {styles.map(s => (
                          <Card key={s.id} title={s.tone} onDelete={()=>handleDelete('styles', s.id)}><p>초점: {s.focus}</p></Card>
                       ))}
