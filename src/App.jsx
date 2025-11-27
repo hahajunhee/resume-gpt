@@ -27,6 +27,7 @@ const firebaseConfig = {
   appId: "1:1028616419862:web:2f6635eb745d15543a1337",
   measurementId: "G-MQ32GG48GK"
 };
+
 // 앱 초기화
 let app, auth, db;
 try {
