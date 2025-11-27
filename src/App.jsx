@@ -170,12 +170,15 @@ const Button = ({ children, onClick, variant = 'primary', className = '', icon: 
   );
 };
 
-const InputField = ({ label, value, onChange, placeholder, multiline = false }) => (
+// [Updated] InputField supports highlighting
+const InputField = ({ label, value, onChange, placeholder, multiline = false, isHighlighted }) => (
   <div className="mb-4">
     <label className="block text-sm font-semibold text-gray-700 mb-1">{label}</label>
     {multiline ? (
       <textarea
-        className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 min-h-[100px]"
+        className={`w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 min-h-[100px] transition-all duration-300 ${
+            isHighlighted ? 'border-yellow-400 bg-yellow-50 ring-2 ring-yellow-200' : 'border-gray-300'
+        }`}
         value={value || ''}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
@@ -183,7 +186,9 @@ const InputField = ({ label, value, onChange, placeholder, multiline = false }) 
     ) : (
       <input
         type="text"
-        className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+        className={`w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-300 ${
+            isHighlighted ? 'border-yellow-400 bg-yellow-50 ring-2 ring-yellow-200' : 'border-gray-300'
+        }`}
         value={value || ''}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
@@ -192,7 +197,8 @@ const InputField = ({ label, value, onChange, placeholder, multiline = false }) 
   </div>
 );
 
-const MultiValueInput = ({ label, items = [], onChange, placeholder }) => {
+// [Updated] MultiValueInput supports highlighting
+const MultiValueInput = ({ label, items = [], onChange, placeholder, isHighlighted }) => {
   const [inputValue, setInputValue] = useState('');
 
   const handleAdd = () => {
@@ -219,7 +225,9 @@ const MultiValueInput = ({ label, items = [], onChange, placeholder }) => {
       <div className="flex gap-2 mb-2">
         <input
           type="text"
-          className="flex-1 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 min-w-0"
+          className={`flex-1 p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 min-w-0 transition-all duration-300 ${
+            isHighlighted ? 'border-yellow-400 bg-yellow-50 ring-2 ring-yellow-200' : 'border-gray-300'
+          }`}
           value={inputValue}
           onChange={(e) => setInputValue(e.target.value)}
           onKeyDown={handleKeyDown}
@@ -390,8 +398,10 @@ export default function App() {
   const [savingTarget, setSavingTarget] = useState(null);
   const [statusMsg, setStatusMsg] = useState(null); 
   const [editMode, setEditMode] = useState({ active: false, id: null, collection: null });
-  // [New] State for form highlighting
   const [isFormHighlighted, setIsFormHighlighted] = useState(false);
+
+  // Refs for Scrolling
+  const mainContentRef = useRef(null);
 
   // Data Stores
   const [experiences, setExperiences] = useState([]);
@@ -660,11 +670,15 @@ export default function App() {
   const handleEdit = (colName, item, setFormFn) => {
     setFormFn(item); 
     setEditMode({ active: true, id: item.id, collection: colName });
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    
+    // [Fix] Scroll the main content container to top
+    if (mainContentRef.current) {
+        mainContentRef.current.scrollTo({ top: 0, behavior: 'smooth' });
+    }
 
     // [New] Visual Cue (Flashing)
     setIsFormHighlighted(true);
-    setTimeout(() => setIsFormHighlighted(false), 1500);
+    setTimeout(() => setIsFormHighlighted(false), 2000);
 
     // [New] Message based on device width
     const isMobile = window.innerWidth < 768;
@@ -956,7 +970,7 @@ ${selStyle ? `[Tone]: ${selStyle.tone} / [Focus]: ${selStyle.focus}` : '기본 �
           </div>
         </header>
 
-        <main className="flex-1 overflow-y-auto p-4 md:p-8 bg-gray-100 relative">
+        <main ref={mainContentRef} className="flex-1 overflow-y-auto p-4 md:p-8 bg-gray-100 relative">
           {/* Status Toast */}
           {statusMsg && (
             <div className={`absolute top-4 left-1/2 -translate-x-1/2 z-[70] p-3 rounded-full shadow-lg border animate-in slide-in-from-top-4 fade-in duration-200 flex items-center gap-2 font-medium ${
@@ -1109,7 +1123,7 @@ ${selStyle ? `[Tone]: ${selStyle.tone} / [Focus]: ${selStyle.focus}` : '기본 �
                   </div>
                   <div className="flex-1 lg:overflow-y-auto pr-2 custom-scrollbar space-y-4">
                      {EXP_QUESTIONS.map(q => (
-                        <InputField key={q.id} label={q.label} value={expForm[q.id]} onChange={v => setExpForm(p => ({...p, [q.id]: v}))} multiline={q.id!=='title'} />
+                        <InputField key={q.id} label={q.label} value={expForm[q.id]} onChange={v => setExpForm(p => ({...p, [q.id]: v}))} multiline={q.id!=='title'} isHighlighted={isFormHighlighted} />
                      ))}
                      <Button className="w-full" onClick={() => handleSave('experience', 'experiences', expForm, resetExpForm)} disabled={savingTarget === 'experience'} icon={Save}>{savingTarget === 'experience' ? '저장 중...' : '저장하기'}</Button>
                   </div>
@@ -1136,11 +1150,11 @@ ${selStyle ? `[Tone]: ${selStyle.tone} / [Focus]: ${selStyle.focus}` : '기본 �
                       <h3 className="font-bold text-blue-800">{editMode.active && editMode.collection==='companies' ? '기업 수정' : '새 기업 등록'}</h3>
                       {editMode.active && editMode.collection==='companies' && <Button variant="ghost" onClick={() => cancelEdit(resetCompForm)}><XCircle size={14}/> 취소</Button>}
                    </div>
-                   <div className="flex-1 lg:overflow-y-auto pr-2 custom-scrollbar space-y-4">
-                      <InputField label="기업명" value={compForm.name} onChange={v=>setCompForm(p=>({...p, name:v}))} />
-                      <InputField label="직무" value={compForm.role} onChange={v=>setCompForm(p=>({...p, role:v}))} />
+                   <div className="flex-1 lg:overflow-y-auto pr-2 custom-scrollbar space-y-4 pb-20">
+                      <InputField label="기업명" value={compForm.name} onChange={v=>setCompForm(p=>({...p, name:v}))} isHighlighted={isFormHighlighted} />
+                      <InputField label="직무" value={compForm.role} onChange={v=>setCompForm(p=>({...p, role:v}))} isHighlighted={isFormHighlighted} />
                       {COMP_FIELDS.slice(2).map(f => (
-                         <InputField key={f.id} label={f.label} value={compForm[f.id]} onChange={v=>setCompForm(p=>({...p, [f.id]:v}))} multiline placeholder={f.placeholder} />
+                         <InputField key={f.id} label={f.label} value={compForm[f.id]} onChange={v=>setCompForm(p=>({...p, [f.id]:v}))} multiline placeholder={f.placeholder} isHighlighted={isFormHighlighted} />
                       ))}
                       <Button className="w-full" onClick={() => handleSave('company', 'companies', compForm, resetCompForm)} disabled={savingTarget === 'company'} icon={Save}>{savingTarget === 'company' ? '저장 중...' : '저장하기'}</Button>
                    </div>
@@ -1164,7 +1178,7 @@ ${selStyle ? `[Tone]: ${selStyle.tone} / [Focus]: ${selStyle.focus}` : '기본 �
 
           {/* Profile Tab */}
           {activeTab === TABS.PROFILE && (
-             <div className="max-w-3xl mx-auto h-full overflow-y-auto custom-scrollbar p-1">
+             <div className="max-w-3xl mx-auto h-full overflow-y-auto custom-scrollbar p-1 pb-24">
                 <div className={`bg-white p-8 rounded-xl border border-gray-200 mb-20 md:mb-0 ${isFormHighlighted ? 'ring-4 ring-yellow-300 transition-all duration-500' : ''}`}>
                    <h3 className="font-bold text-xl mb-6 text-blue-800 flex items-center gap-2"><User size={24}/> 나의 정보 관리 (자동 저장 아님)</h3>
                    <div className="space-y-8">
@@ -1175,6 +1189,7 @@ ${selStyle ? `[Tone]: ${selStyle.tone} / [Focus]: ${selStyle.focus}` : '기본 �
                             items={profForm[f.id] || []} 
                             onChange={newItems => setProfForm(prev => ({ ...prev, [f.id]: newItems }))}
                             placeholder={`${f.label.split(' ').slice(1).join(' ')} 입력 후 Enter 또는 추가 버튼`}
+                            isHighlighted={isFormHighlighted}
                          />
                       ))}
                       <div className="pt-4 border-t">
@@ -1193,8 +1208,8 @@ ${selStyle ? `[Tone]: ${selStyle.tone} / [Focus]: ${selStyle.focus}` : '기본 �
              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 h-full">
                 <div className={`bg-white p-6 rounded-xl border border-gray-200 h-fit order-1 lg:order-none ${isFormHighlighted ? 'ring-4 ring-yellow-300 transition-all duration-500' : ''}`}>
                    <h3 className="font-bold text-blue-800 mb-4">스타일 등록</h3>
-                   <InputField label="톤 (Tone)" value={styleForm.tone} onChange={v => setStyleForm(p=>({...p, tone:v}))} placeholder="예: 진정성 있는" />
-                   <InputField label="초점 (Focus)" value={styleForm.focus} onChange={v => setStyleForm(p=>({...p, focus:v}))} placeholder="예: 성과 중심" />
+                   <InputField label="톤 (Tone)" value={styleForm.tone} onChange={v => setStyleForm(p=>({...p, tone:v}))} placeholder="예: 진정성 있는" isHighlighted={isFormHighlighted} />
+                   <InputField label="초점 (Focus)" value={styleForm.focus} onChange={v => setStyleForm(p=>({...p, focus:v}))} placeholder="예: 성과 중심" isHighlighted={isFormHighlighted} />
                    <Button className="w-full mt-4" onClick={() => handleSave('style', 'styles', styleForm, () => setStyleForm({tone:'', focus:''}))} disabled={savingTarget === 'style'}>{savingTarget === 'style' ? '저장 중...' : '저장'}</Button>
                 </div>
                 <div className="overflow-y-auto pr-2 custom-scrollbar h-full order-2 lg:order-none">
