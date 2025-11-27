@@ -17,7 +17,6 @@ import {
 } from 'lucide-react';
 
 // --- [중요] Firebase Configuration ---
-// 본인의 Firebase 설정값으로 변경해주세요.
 const firebaseConfig = {
   apiKey: "AIzaSyCRRqFzQJAIfbos7wg2GIItjzqmThrIZYc",
   authDomain: "jasoseo-cff03.firebaseapp.com",
@@ -83,7 +82,6 @@ const PROFILE_FIELDS = [
   { id: 'goals', label: '⑤ 장래 목표' }
 ];
 
-// --- Default Data Sets ---
 const DEFAULT_COMPANIES = [
   {
     name: "삼성전자",
@@ -1078,19 +1076,15 @@ ${selStyle ? `[Tone]: ${selStyle.tone} / [Focus]: ${selStyle.focus}` : '기본 �
                       </div>
                     </div>
 
-                    {/* Desktop Fixed Button */}
-                    <div className="hidden md:block p-4 border-t border-gray-100 shrink-0">
-                       <Button className="w-full py-3" onClick={generatePrompt} disabled={savingTarget === 'generator'} icon={Sparkles}>프롬프트 생성</Button>
+                    {/* Fixed Button (PC/Mobile Bottom) */}
+                    <div className="p-4 border-t border-gray-100 shrink-0 bg-white md:relative fixed bottom-16 left-0 right-0 md:bottom-0 md:left-auto md:right-auto z-50 md:z-auto shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] md:shadow-none">
+                       {/* Mobile Scroll Hint (Only visible on mobile) */}
+                       <div className="md:hidden absolute -top-12 left-1/2 -translate-x-1/2 text-blue-500 animate-bounce pointer-events-none bg-white/90 rounded-full p-2 shadow-sm border border-gray-100">
+                          <ArrowDown size={20} />
+                       </div>
+                       <Button className="w-full py-3 shadow-lg md:shadow-none text-lg md:text-base font-bold" onClick={generatePrompt} disabled={savingTarget === 'generator'} icon={Sparkles}>프롬프트 생성</Button>
                     </div>
                  </div>
-              </div>
-
-              {/* Mobile Fixed Button (Floating) */}
-              <div className="md:hidden fixed bottom-16 left-0 right-0 p-4 bg-white border-t border-gray-200 z-50 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)]">
-                 <div className="absolute -top-12 left-1/2 -translate-x-1/2 text-blue-500 animate-bounce pointer-events-none bg-white/90 rounded-full p-2 shadow-sm border border-gray-100">
-                    <ArrowDown size={20} />
-                 </div>
-                 <Button className="w-full py-3 shadow-lg text-lg font-bold" onClick={generatePrompt} disabled={savingTarget === 'generator'} icon={Sparkles}>프롬프트 생성</Button>
               </div>
 
               {/* Right Side: Result Area */}
@@ -1120,7 +1114,7 @@ ${selStyle ? `[Tone]: ${selStyle.tone} / [Focus]: ${selStyle.focus}` : '기본 �
           {/* Experience Tab */}
           {activeTab === TABS.EXPERIENCE && (
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 h-full">
-               <div className={`bg-white rounded-xl border border-gray-200 flex flex-col h-full order-1 lg:order-none overflow-hidden ${isFormHighlighted ? 'ring-4 ring-yellow-300 transition-all duration-500' : ''}`}>
+               <div className={`bg-white rounded-xl border border-gray-200 flex flex-col h-auto lg:h-full order-1 lg:order-none overflow-hidden ${isFormHighlighted ? 'ring-4 ring-yellow-300 transition-all duration-500' : ''}`}>
                   <div className="flex justify-between p-6 border-b border-gray-100 shrink-0 bg-white">
                      <h3 className="font-bold text-blue-800">{editMode.active && editMode.collection==='experiences' ? '경험 수정' : '새 경험 등록'}</h3>
                      {editMode.active && editMode.collection==='experiences' && <Button variant="ghost" onClick={() => cancelEdit(resetExpForm)}><XCircle size={14}/> 취소</Button>}
@@ -1141,9 +1135,9 @@ ${selStyle ? `[Tone]: ${selStyle.tone} / [Focus]: ${selStyle.focus}` : '기본 �
                   </div>
                </div>
 
-               <div className="flex flex-col h-full overflow-hidden order-2 lg:order-none">
+               <div className="flex flex-col h-auto lg:h-full lg:overflow-hidden order-2 lg:order-none mt-8 lg:mt-0">
                   <h3 className="font-bold text-gray-700 mb-4 shrink-0">목록 ({experiences.length})</h3>
-                  <div className="grid gap-4 pb-24 lg:pb-10 pr-2 custom-scrollbar overflow-y-auto flex-1">
+                  <div className="grid gap-4 pb-24 lg:pb-10 pr-2 custom-scrollbar lg:overflow-y-auto h-auto lg:h-full">
                      {experiences.map(e => (
                         <Card key={e.id} title={e.title} onDelete={()=>handleDelete('experiences', e.id)} onEdit={()=>handleEdit('experiences', e, setExpForm)} 
                               expandedContent={<div className="space-y-2 text-sm">{EXP_QUESTIONS.slice(1).map(q => e[q.id] && <div key={q.id}><strong className="text-xs text-gray-500">{q.label}</strong><p>{e[q.id]}</p></div>)}</div>}>
@@ -1158,7 +1152,7 @@ ${selStyle ? `[Tone]: ${selStyle.tone} / [Focus]: ${selStyle.focus}` : '기본 �
           {/* Company Tab */}
           {activeTab === TABS.COMPANY && (
              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 h-full">
-                <div className={`bg-white rounded-xl border border-gray-200 flex flex-col h-full order-1 lg:order-none overflow-hidden ${isFormHighlighted ? 'ring-4 ring-yellow-300 transition-all duration-500' : ''}`}>
+                <div className={`bg-white rounded-xl border border-gray-200 flex flex-col h-auto lg:h-full order-1 lg:order-none overflow-hidden ${isFormHighlighted ? 'ring-4 ring-yellow-300 transition-all duration-500' : ''}`}>
                    <div className="flex justify-between p-6 border-b border-gray-100 shrink-0 bg-white">
                       <h3 className="font-bold text-blue-800">{editMode.active && editMode.collection==='companies' ? '기업 수정' : '새 기업 등록'}</h3>
                       {editMode.active && editMode.collection==='companies' && <Button variant="ghost" onClick={() => cancelEdit(resetCompForm)}><XCircle size={14}/> 취소</Button>}
@@ -1181,9 +1175,9 @@ ${selStyle ? `[Tone]: ${selStyle.tone} / [Focus]: ${selStyle.focus}` : '기본 �
                    </div>
                 </div>
 
-                <div className="flex flex-col h-full overflow-hidden order-2 lg:order-none">
+                <div className="flex flex-col h-auto lg:h-full lg:overflow-hidden order-2 lg:order-none mt-8 lg:mt-0">
                    <h3 className="font-bold text-gray-700 mb-4 shrink-0">목록 ({companies.length})</h3>
-                   <div className="grid gap-4 pb-24 lg:pb-10 pr-2 custom-scrollbar overflow-y-auto flex-1">
+                   <div className="grid gap-4 pb-24 lg:pb-10 pr-2 custom-scrollbar lg:overflow-y-auto h-auto lg:h-full">
                       {companies.map(c => (
                          <Card key={c.id} title={`${c.name} (${c.role})`} onDelete={()=>handleDelete('companies', c.id)} onEdit={()=>handleEdit('companies', c, setCompForm)}
                                expandedContent={<div className="space-y-2 text-sm">{COMP_FIELDS.slice(2).map(f => c[f.id] && <div key={f.id}><strong className="text-xs text-gray-500">{f.label}</strong><p>{c[f.id]}</p></div>)}</div>}>
@@ -1228,7 +1222,7 @@ ${selStyle ? `[Tone]: ${selStyle.tone} / [Focus]: ${selStyle.focus}` : '기본 �
           {/* Style Tab */}
           {activeTab === TABS.STYLE && (
              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 h-full">
-                <div className={`bg-white rounded-xl border border-gray-200 flex flex-col h-fit lg:h-full order-1 lg:order-none overflow-hidden ${isFormHighlighted ? 'ring-4 ring-yellow-300 transition-all duration-500' : ''}`}>
+                <div className={`bg-white rounded-xl border border-gray-200 flex flex-col h-auto lg:h-full order-1 lg:order-none overflow-hidden ${isFormHighlighted ? 'ring-4 ring-yellow-300 transition-all duration-500' : ''}`}>
                    <div className="p-6 border-b border-gray-100 shrink-0 bg-white">
                       <h3 className="font-bold text-blue-800 mb-0">스타일 등록</h3>
                    </div>
@@ -1243,8 +1237,8 @@ ${selStyle ? `[Tone]: ${selStyle.tone} / [Focus]: ${selStyle.focus}` : '기본 �
                    </div>
                 </div>
 
-                <div className="flex flex-col h-full overflow-hidden order-2 lg:order-none">
-                   <div className="grid gap-4 pb-24 lg:pb-10 pr-2 custom-scrollbar overflow-y-auto flex-1">
+                <div className="flex flex-col h-auto lg:h-full lg:overflow-hidden order-2 lg:order-none mt-8 lg:mt-0">
+                   <div className="grid gap-4 pb-24 lg:pb-10 pr-2 custom-scrollbar lg:overflow-y-auto h-auto lg:h-full">
                       {styles.map(s => (
                          <Card key={s.id} title={s.tone} onDelete={()=>handleDelete('styles', s.id)}><p>초점: {s.focus}</p></Card>
                       ))}
