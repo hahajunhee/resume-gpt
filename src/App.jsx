@@ -911,7 +911,7 @@ ${expInfoStr}
                   <button className={`flex-1 py-2 text-sm font-bold rounded-md transition-all ${mobileSubTab === 'form' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-500'}`} onClick={() => setMobileSubTab('form')}>✏️ 작성하기</button>
                   <button className={`flex-1 py-2 text-sm font-bold rounded-md transition-all ${mobileSubTab === 'list' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-500'}`} onClick={() => setMobileSubTab('list')}>📋 목록 ({experiences.length})</button>
                </div>
-               <div className="flex flex-col lg:grid lg:grid-cols-2 gap-6 h-full">
+               <div className="flex flex-col lg:grid lg:grid-cols-2 gap-6 h-auto lg:h-full">
                   {/* Form Section */}
                   <div className={`${mobileSubTab === 'list' ? 'hidden' : 'flex'} lg:flex bg-white rounded-xl border border-gray-200 flex-col h-auto lg:h-full order-1 lg:order-none overflow-hidden ${isFormHighlighted ? 'ring-4 ring-yellow-300 transition-all duration-500' : ''}`}>
                      <div className="flex justify-between p-6 border-b border-gray-100 shrink-0 bg-white items-center">
@@ -952,7 +952,7 @@ ${expInfoStr}
                    <button className={`flex-1 py-2 text-sm font-bold rounded-md transition-all ${mobileSubTab === 'form' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-500'}`} onClick={() => setMobileSubTab('form')}>✏️ 작성하기</button>
                    <button className={`flex-1 py-2 text-sm font-bold rounded-md transition-all ${mobileSubTab === 'list' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-500'}`} onClick={() => setMobileSubTab('list')}>📋 목록 ({companies.length})</button>
                 </div>
-                <div className="flex flex-col lg:grid lg:grid-cols-2 gap-6 h-full">
+                <div className="flex flex-col lg:grid lg:grid-cols-2 gap-6 h-auto lg:h-full">
                    <div className={`${mobileSubTab === 'list' ? 'hidden' : 'flex'} lg:flex bg-white rounded-xl border border-gray-200 flex-col h-auto lg:h-full order-1 lg:order-none overflow-hidden ${isFormHighlighted ? 'ring-4 ring-yellow-300 transition-all duration-500' : ''}`}>
                       <div className="flex justify-between p-6 border-b border-gray-100 shrink-0 bg-white items-center">
                          <h3 className="font-bold text-blue-800">{editMode.active && editMode.collection==='companies' ? '기업 수정' : '새 기업 등록'}</h3>
