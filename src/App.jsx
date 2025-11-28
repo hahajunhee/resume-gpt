@@ -12,8 +12,8 @@ import {
   getFirestore, collection, doc, addDoc, updateDoc, deleteDoc, onSnapshot, query, orderBy, serverTimestamp, limit as firestoreLimit, writeBatch 
 } from 'firebase/firestore';
 import { 
-  Save, Trash2, Copy, FileText, Briefcase, User, PenTool, Layout, 
-  Database, Sparkles, Edit2, ChevronDown, ChevronUp, CheckSquare, Square, XCircle, LogOut, Lock, Mail, AlertCircle, CheckCircle2, ArrowLeft, Plus, Menu, ArrowDown, MousePointerClick, GripHorizontal, Info, List, PenLine
+  Save, Trash2, Copy, FileText, Briefcase, User, Layout, 
+  Database, Sparkles, Edit2, ChevronDown, CheckSquare, Square, XCircle, LogOut, Lock, Mail, AlertCircle, CheckCircle2, ArrowLeft, Plus, ArrowDown, MousePointerClick, GripHorizontal, Info
 } from 'lucide-react';
 
 // --- [중요] Firebase Configuration ---
@@ -45,9 +45,22 @@ const TABS = {
   EXPERIENCE: 'experience',
   COMPANY: 'company',
   PROFILE: 'profile',
-  STYLE: 'style',
   GENERATOR: 'generator'
 };
+
+// [Updated] 10 Best Styles for Cover Letter
+const PRESET_STYLES = [
+    { id: 's1', tone: '진정성/성장', focus: '꾸밈없는 태도와 꾸준한 성장 과정 강조' },
+    { id: 's2', tone: '전문성/성과', focus: '구체적인 수치와 성과 중심의 논리적 서술' },
+    { id: 's3', tone: '도전/열정', focus: '실패를 두려워하지 않는 도전 정신과 열정 부각' },
+    { id: 's4', tone: '창의/혁신', focus: '기존 틀을 깨는 창의적인 문제해결 능력 강조' },
+    { id: 's5', tone: '소통/협업', focus: '팀워크와 갈등 해결 및 소통 능력 중심' },
+    { id: 's6', tone: '분석/논리', focus: '데이터 기반의 분석적 사고와 논리적 전개' },
+    { id: 's7', tone: '리더십/주도성', focus: '주도적으로 문제를 해결하고 팀을 이끄는 리더십' },
+    { id: 's8', tone: '성실/책임감', focus: '맡은 바를 끝까지 완수하는 책임감과 성실함' },
+    { id: 's9', tone: '글로벌/개방성', focus: '글로벌 마인드와 새로운 문화에 대한 수용력' },
+    { id: 's10', tone: '직무적합/실무', focus: '실무 경험과 직무 관련 핵심 역량 최우선' }
+];
 
 const EXP_QUESTIONS = [
   { id: 'title', label: '1. 경험 제목 (예: 종합설계 프로젝트)' },
@@ -75,12 +88,12 @@ const COMP_FIELDS = [
   { id: 'market_issue', label: "이 '시장'의 가장 큰 화두는 무엇인가? (경쟁/트렌드)", placeholder: "예: 공급망 불안정성 증대, 친환경 물류 전환..." }
 ];
 
+// [Updated] Removed 'experienceList'
 const PROFILE_FIELDS = [
   { id: 'strength', label: '① 나의 강점' },
   { id: 'keywords', label: '② 핵심 키워드' },
-  { id: 'experienceList', label: '③ 주요 경험 목록' },
-  { id: 'values', label: '④ 가치관/일하는 방식' },
-  { id: 'goals', label: '⑤ 장래 목표' }
+  { id: 'values', label: '③ 가치관/일하는 방식' },
+  { id: 'goals', label: '④ 장래 목표' }
 ];
 
 // --- Default Data Sets ---
@@ -141,16 +154,9 @@ const DEFAULT_EXPERIENCES = [
 const DEFAULT_PROFILE = {
     strength: ["꼼꼼한 데이터 분석 능력", "긍정적인 소통 태도", "끝까지 파고드는 집요함"],
     keywords: ["분석력", "책임감", "협업"],
-    experienceList: ["마케팅 공모전 은상 수상", "물류 센터 아르바이트 6개월", "해외 봉사활동 리더"],
     values: ["신뢰를 최우선으로 생각함", "함께 성장하는 문화 지향"],
     goals: ["데이터 기반 의사결정 전문가로 성장", "팀 내 대체 불가능한 핵심 인재 되기"]
 };
-
-const DEFAULT_STYLES = [
-  { tone: "진정성 있는/차분한", focus: "성장 과정과 가치관 중심" },
-  { tone: "자신감 넘치는/논리적인", focus: "성과 수치와 문제해결 역량 중심" },
-  { tone: "창의적인/트렌디한", focus: "새로운 시도와 인사이트 중심" }
-];
 
 // --- Components ---
 
@@ -392,7 +398,7 @@ export default function App() {
   const [user, setUser] = useState(null);
   const [activeTab, setActiveTab] = useState(TABS.GENERATOR);
   
-  // [New] Mobile Sub Tab State ('form' | 'list')
+  // Mobile Sub Tab State ('form' | 'list')
   const [mobileSubTab, setMobileSubTab] = useState('form');
 
   const [tutorialStep, setTutorialStep] = useState(0);
@@ -408,7 +414,6 @@ export default function App() {
   const [experiences, setExperiences] = useState([]);
   const [companies, setCompanies] = useState([]);
   const [profile, setProfile] = useState(null);
-  const [styles, setStyles] = useState([]);
 
   // Form States
   const [expForm, setExpForm] = useState(
@@ -417,22 +422,22 @@ export default function App() {
   const [compForm, setCompForm] = useState(
     COMP_FIELDS.reduce((acc, cur) => ({ ...acc, [cur.id]: '' }), {})
   );
+  // [Updated] Profile form without experienceList
   const [profForm, setProfForm] = useState({ 
-    strength: [], keywords: [], experienceList: [], values: [], goals: [] 
+    strength: [], keywords: [], values: [], goals: [] 
   });
-  const [styleForm, setStyleForm] = useState({ tone: '', focus: '' });
 
   // Flags for Default Injection
   const isProfileLoaded = useRef(false);
   const isCompanyChecked = useRef(false); 
   const isExperienceChecked = useRef(false);
-  const isStyleChecked = useRef(false);
 
   // Generator Selections
+  // [Updated] profDetail without experienceList
   const [selections, setSelections] = useState({
     expIds: [], compId: '', compFields: {}, 
-    profDetail: { strength: [], keywords: [], experienceList: [], values: [], goals: [] }, 
-    styleId: '', qType: '지원동기', limit: '900'
+    profDetail: { strength: [], keywords: [], values: [], goals: [] }, 
+    styleId: 's1', qType: '지원동기', limit: '900'
   });
   
   const [generatedPrompt, setGeneratedPrompt] = useState('');
@@ -559,11 +564,13 @@ export default function App() {
          } else {
            const docData = snapshot.docs[0];
            const newData = { ...docData.data() };
-           PROFILE_FIELDS.forEach(field => {
-             if (typeof newData[field.id] === 'string') {
-                newData[field.id] = newData[field.id] ? [newData[field.id]] : [];
-             } else if (!Array.isArray(newData[field.id])) {
-                newData[field.id] = [];
+           // Remove experienceList from compatibility check
+           const fieldsToCheck = PROFILE_FIELDS.map(f => f.id);
+           fieldsToCheck.forEach(fieldId => {
+             if (typeof newData[fieldId] === 'string') {
+                newData[fieldId] = newData[fieldId] ? [newData[fieldId]] : [];
+             } else if (!Array.isArray(newData[fieldId])) {
+                newData[fieldId] = [];
              }
            });
            setProfile({ id: docData.id, ...newData });
@@ -575,29 +582,8 @@ export default function App() {
        }
     );
 
-    const subStyle = onSnapshot(
-      query(collection(db, 'artifacts', appId, 'users', user.uid, 'styles'), orderBy('createdAt', 'desc')),
-      async (snapshot) => {
-        const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-        setStyles(data);
-        if (data.length === 0 && !isStyleChecked.current) {
-          isStyleChecked.current = true;
-          try {
-            const batch = writeBatch(db);
-            DEFAULT_STYLES.forEach(style => {
-              const docRef = doc(collection(db, 'artifacts', appId, 'users', user.uid, 'styles'));
-              batch.set(docRef, { ...style, createdAt: serverTimestamp() });
-            });
-            await batch.commit();
-          } catch (e) { console.error(e); }
-        } else {
-          isStyleChecked.current = true;
-        }
-      }
-    );
-
     return () => {
-      subExp(); subComp(); subProf(); subStyle();
+      subExp(); subComp(); subProf();
     };
   }, [user]);
 
@@ -735,11 +721,12 @@ export default function App() {
 
     const selExps = experiences.filter(e => selections.expIds.includes(e.id));
     const selComp = companies.find(e => e.id === selections.compId);
-    const selStyle = styles.find(e => e.id === selections.styleId);
+    const selStyle = PRESET_STYLES.find(s => s.id === selections.styleId) || PRESET_STYLES[0];
 
     let compInfoStr = `기업명: ${selComp.name} / 직무: ${selComp.role}\n`;
     COMP_FIELDS.forEach(field => {
-       if(selections.compFields[field.id] && selComp[field.id]) {
+       // [Updated] Filter out name and role from detailed checkboxes
+       if(field.id !== 'name' && field.id !== 'role' && selections.compFields[field.id] && selComp[field.id]) {
          compInfoStr += `- ${field.label}: ${selComp[field.id]}\n`;
        }
     });
@@ -785,7 +772,8 @@ ${profInfoStr}
 ${expInfoStr}
 
 3. 핵심 지침 (Style Guide)
-${selStyle ? `[Tone]: ${selStyle.tone} / [Focus]: ${selStyle.focus}` : '기본 스타일: 전략적이고 진정성 있는 톤'}
+[Tone]: ${selStyle.tone}
+[Focus]: ${selStyle.focus}
 - 두괄식 구조, STAR 프레임워크 활용.
 - 구체적인 수치와 성과 중심 서술.
 - ${selections.limit}자 내외 준수.
@@ -814,7 +802,6 @@ ${selStyle ? `[Tone]: ${selStyle.tone} / [Focus]: ${selStyle.focus}` : '기본 �
       { id: TABS.EXPERIENCE, icon: FileText, label: '경험' },
       { id: TABS.COMPANY, icon: Briefcase, label: '기업' },
       { id: TABS.PROFILE, icon: User, label: '정보' },
-      { id: TABS.STYLE, icon: PenTool, label: '문체' },
     ];
 
     return (
@@ -854,7 +841,6 @@ ${selStyle ? `[Tone]: ${selStyle.tone} / [Focus]: ${selStyle.focus}` : '기본 �
             <NavItem id={TABS.EXPERIENCE} icon={FileText} label="1. 경험 (Experience)" activeTab={activeTab} onClick={() => { setActiveTab(TABS.EXPERIENCE); setEditMode({active:false,id:null,collection:null}); }} />
             <NavItem id={TABS.COMPANY} icon={Briefcase} label="2. 기업 (Company)" activeTab={activeTab} onClick={() => { setActiveTab(TABS.COMPANY); setEditMode({active:false,id:null,collection:null}); }} />
             <NavItem id={TABS.PROFILE} icon={User} label="3. 자기 정보 (Me)" activeTab={activeTab} onClick={() => { setActiveTab(TABS.PROFILE); setEditMode({active:false,id:null,collection:null}); }} />
-            <NavItem id={TABS.STYLE} icon={PenTool} label="4. 문체 (Style)" activeTab={activeTab} onClick={() => { setActiveTab(TABS.STYLE); setEditMode({active:false,id:null,collection:null}); }} />
           </div>
         </nav>
         <div className="p-4 bg-gray-50 border-t">
@@ -969,7 +955,6 @@ ${selStyle ? `[Tone]: ${selStyle.tone} / [Focus]: ${selStyle.focus}` : '기본 �
             {activeTab === TABS.EXPERIENCE && "나의 핵심 경험 관리"}
             {activeTab === TABS.COMPANY && "목표 기업 및 직무 분석"}
             {activeTab === TABS.PROFILE && "나의 정보 관리"}
-            {activeTab === TABS.STYLE && "자소서 문체 설정"}
           </h2>
           <div className="flex items-center gap-4">
             {activeTab === TABS.GENERATOR && generatedPrompt && <Button onClick={copyToClipboard} icon={Copy}>복사</Button>}
@@ -1018,11 +1003,12 @@ ${selStyle ? `[Tone]: ${selStyle.tone} / [Focus]: ${selStyle.focus}` : '기본 �
                          <label className="block text-sm font-bold text-gray-700 mb-2">기업 선택</label>
                          <select className="w-full p-2 border rounded bg-blue-50" value={selections.compId} onChange={e => setSelections({...selections, compId:e.target.value})}>
                             <option value="">선택하세요</option>
-                            {companies.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                            {companies.map(c => <option key={c.id} value={c.id}>{c.name} ({c.role})</option>)}
                          </select>
                          {selections.compId && (
                            <div className="mt-2 space-y-1 bg-gray-50 p-2 rounded">
                               {COMP_FIELDS.map(f => {
+                                 if (f.id === 'name' || f.id === 'role') return null;
                                  const c = companies.find(x=>x.id===selections.compId);
                                  if(!c?.[f.id]) return null;
                                  return (
@@ -1081,9 +1067,8 @@ ${selStyle ? `[Tone]: ${selStyle.tone} / [Focus]: ${selStyle.focus}` : '기본 �
                       <div className="pb-10 md:pb-0">
                           <label className="block text-sm font-bold text-gray-700 mb-2">문체 스타일 선택</label>
                           <select className="w-full p-2 border rounded bg-gray-50" value={selections.styleId} onChange={e => setSelections({...selections, styleId:e.target.value})}>
-                              <option value="">기본 (선택 안 함)</option>
-                              {styles.map(s => (
-                                  <option key={s.id} value={s.id}>{s.tone} / {s.focus}</option>
+                              {PRESET_STYLES.map(s => (
+                                  <option key={s.id} value={s.id}>{s.tone}</option>
                               ))}
                           </select>
                       </div>
@@ -1269,55 +1254,6 @@ ${selStyle ? `[Tone]: ${selStyle.tone} / [Focus]: ${selStyle.focus}` : '기본 �
                    </div>
                 </div>
              </div>
-          )}
-
-          {/* Style Tab */}
-          {activeTab === TABS.STYLE && (
-             <>
-                {/* Mobile Toggle Tabs */}
-                <div className="md:hidden flex mb-4 bg-gray-200 p-1 rounded-lg shrink-0">
-                   <button 
-                      className={`flex-1 py-2 text-sm font-bold rounded-md transition-all ${mobileSubTab === 'form' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-500'}`}
-                      onClick={() => setMobileSubTab('form')}
-                   >
-                      ✏️ 작성하기
-                   </button>
-                   <button 
-                      className={`flex-1 py-2 text-sm font-bold rounded-md transition-all ${mobileSubTab === 'list' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-500'}`}
-                      onClick={() => setMobileSubTab('list')}
-                   >
-                      📋 목록 ({styles.length})
-                   </button>
-                </div>
-
-                <div className="flex flex-col lg:grid lg:grid-cols-2 gap-6 h-auto lg:h-full">
-                   <div className={`${mobileSubTab === 'list' ? 'hidden' : 'flex'} lg:flex bg-white p-6 rounded-xl border border-gray-200 flex-col h-auto lg:h-full order-1 lg:order-none ${isFormHighlighted ? 'ring-4 ring-yellow-300 transition-all duration-500' : ''}`}>
-                      <div className="p-6 border-b border-gray-100 shrink-0 bg-white">
-                         <h3 className="font-bold text-blue-800 mb-0">스타일 등록</h3>
-                      </div>
-
-                      <div className="flex-1 lg:overflow-y-auto lg:p-6 custom-scrollbar space-y-4">
-                         <InputField label="톤 (Tone)" value={styleForm.tone} onChange={v => setStyleForm(p=>({...p, tone:v}))} placeholder="예: 진정성 있는" isHighlighted={isFormHighlighted} />
-                         <InputField label="초점 (Focus)" value={styleForm.focus} onChange={v => setStyleForm(p=>({...p, focus:v}))} placeholder="예: 성과 중심" isHighlighted={isFormHighlighted} />
-                         <div className="lg:hidden pt-4 pb-10">
-                            <Button className="w-full" onClick={() => handleSave('style', 'styles', styleForm, () => setStyleForm({tone:'', focus:''}))} disabled={savingTarget === 'style'}>{savingTarget === 'style' ? '저장 중...' : '저장'}</Button>
-                         </div>
-                      </div>
-
-                      <div className="hidden lg:block p-4 border-t border-gray-100 mt-auto">
-                         <Button className="w-full" onClick={() => handleSave('style', 'styles', styleForm, () => setStyleForm({tone:'', focus:''}))} disabled={savingTarget === 'style'}>{savingTarget === 'style' ? '저장 중...' : '저장'}</Button>
-                      </div>
-                   </div>
-
-                   <div className={`${mobileSubTab === 'form' ? 'hidden' : 'flex'} lg:flex flex-col h-auto lg:h-full lg:overflow-hidden order-2 lg:order-none`}>
-                      <div className="grid gap-4 pb-24 lg:pb-10 pr-2 custom-scrollbar lg:overflow-y-auto h-auto lg:h-full">
-                         {styles.map(s => (
-                            <Card key={s.id} title={s.tone} onDelete={()=>handleDelete('styles', s.id)}><p>초점: {s.focus}</p></Card>
-                         ))}
-                      </div>
-                   </div>
-                </div>
-             </>
           )}
           
         </main>
