@@ -280,7 +280,13 @@ const AuthScreen = () => {
     if (isSubmitting) return;
     setError('');
     setIsSubmitting(true);
-    if (!auth) { setError('Firebase 설정 오류.'); setIsSubmitting(false); return; }
+    
+    if (!auth) {
+      setError('Firebase 설정 오류. 코드를 확인해주세요.');
+      setIsSubmitting(false);
+      return;
+    }
+
     try {
       if (resetMode) {
         await sendPasswordResetEmail(auth, email);
@@ -292,7 +298,11 @@ const AuthScreen = () => {
         await createUserWithEmailAndPassword(auth, email, password);
       }
     } catch (err) {
-        setError('오류: ' + err.message);
+      console.error(err);
+      if (err.code === 'auth/invalid-credential') setError('이메일 또는 비밀번호가 틀렸습니다.');
+      else if (err.code === 'auth/email-already-in-use') setError('이미 사용 중인 이메일입니다.');
+      else if (err.code === 'auth/weak-password') setError('비밀번호는 6자 이상이어야 합니다.');
+      else setError('오류: ' + err.message);
     } finally {
       setIsSubmitting(false);
     }
@@ -308,23 +318,42 @@ const AuthScreen = () => {
           <h2 className="text-2xl font-bold text-gray-800">자소서 GPT</h2>
           <p className="text-gray-500 mt-1">{resetMode ? '비밀번호 재설정' : (isLogin ? '로그인' : '회원가입')}</p>
         </div>
+
         <form onSubmit={handleAuth} className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">이메일</label>
-            <input type="email" required className="w-full p-3 border rounded-lg" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="email@example.com" />
+            <div className="relative">
+              <Mail className="absolute left-3 top-3 text-gray-400" size={18} />
+              <input type="email" required className="w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="email@example.com" />
+            </div>
           </div>
+
           {!resetMode && (
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">비밀번호</label>
-              <input type="password" required className="w-full p-3 border rounded-lg" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="******" />
+              <div className="relative">
+                <Lock className="absolute left-3 top-3 text-gray-400" size={18} />
+                <input type="password" required className="w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="******" />
+              </div>
             </div>
           )}
+
           {error && <p className="text-red-500 text-sm text-center">{error}</p>}
-          <Button type="submit" disabled={isSubmitting} className="w-full py-2.5">{isSubmitting ? '처리 중...' : (resetMode ? '전송' : (isLogin ? '로그인' : '회원가입'))}</Button>
+          <Button type="submit" disabled={isSubmitting} className="w-full py-2.5">
+            {isSubmitting ? '처리 중...' : (resetMode ? '전송' : (isLogin ? '로그인' : '회원가입'))}
+          </Button>
         </form>
+
         <div className="mt-6 text-center text-sm text-gray-500">
-          <button onClick={() => setIsLogin(!isLogin)} className="text-blue-600 hover:underline mr-4">{isLogin ? '회원가입' : '로그인'}</button>
-          <button onClick={() => setResetMode(!resetMode)} className="text-gray-500 hover:underline">{resetMode ? '돌아가기' : '비밀번호 찾기'}</button>
+          {resetMode ? (
+            <button onClick={() => setResetMode(false)} className="text-blue-600 hover:underline">돌아가기</button>
+          ) : (
+            <>
+              {isLogin ? "계정이 없으신가요? " : "이미 계정이 있으신가요? "}
+              <button onClick={() => setIsLogin(!isLogin)} className="text-blue-600 font-semibold hover:underline">{isLogin ? '회원가입' : '로그인'}</button>
+              {isLogin && <div className="mt-2"><button onClick={() => setResetMode(true)} className="text-gray-400 hover:text-gray-600 text-xs">비밀번호 찾기</button></div>}
+            </>
+          )}
         </div>
       </div>
     </div>
@@ -451,7 +480,7 @@ export default function App() {
     );
 
     return () => { subExp(); subComp(); subProf(); };
-  }, [user, activeTab]); // Added activeTab dependency to refresh form on tab switch if needed
+  }, [user, activeTab]); 
 
   // --- Helpers ---
   const nextTutorial = () => {
@@ -884,13 +913,13 @@ ${expInfoStr}
                </div>
                <div className="flex flex-col lg:grid lg:grid-cols-2 gap-6 h-full">
                   {/* Form Section */}
-                  <div className={`${mobileSubTab === 'list' ? 'hidden' : 'flex'} lg:flex bg-white rounded-xl border border-gray-200 flex-col h-auto lg:h-full order-1 lg:order-none ${isFormHighlighted ? 'ring-4 ring-yellow-300 transition-all duration-500' : ''}`}>
+                  <div className={`${mobileSubTab === 'list' ? 'hidden' : 'flex'} lg:flex bg-white rounded-xl border border-gray-200 flex-col h-auto lg:h-full order-1 lg:order-none overflow-hidden ${isFormHighlighted ? 'ring-4 ring-yellow-300 transition-all duration-500' : ''}`}>
                      <div className="flex justify-between p-6 border-b border-gray-100 shrink-0 bg-white items-center">
                         <h3 className="font-bold text-blue-800">{editMode.active && editMode.collection==='experiences' ? '경험 수정' : '새 경험 등록'}</h3>
                         <button onClick={() => setShowHelp('experience')} className="text-gray-400 hover:text-blue-500"><HelpCircle size={20}/></button>
                         {editMode.active && editMode.collection==='experiences' && <Button variant="ghost" onClick={() => cancelEdit(resetExpForm)}><XCircle size={14}/> 취소</Button>}
                      </div>
-                     <div className="flex-1 lg:overflow-y-auto p-6 custom-scrollbar space-y-4">
+                     <div className="flex-1 lg:overflow-y-auto p-6 custom-scrollbar space-y-4 min-h-0">
                         {EXP_QUESTIONS.map(q => (
                            <InputField key={q.id} label={q.label} value={expForm[q.id]} onChange={v => setExpForm(p => ({...p, [q.id]: v}))} multiline={q.id!=='title'} isHighlighted={isFormHighlighted} />
                         ))}
@@ -924,13 +953,13 @@ ${expInfoStr}
                    <button className={`flex-1 py-2 text-sm font-bold rounded-md transition-all ${mobileSubTab === 'list' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-500'}`} onClick={() => setMobileSubTab('list')}>📋 목록 ({companies.length})</button>
                 </div>
                 <div className="flex flex-col lg:grid lg:grid-cols-2 gap-6 h-full">
-                   <div className={`${mobileSubTab === 'list' ? 'hidden' : 'flex'} lg:flex bg-white rounded-xl border border-gray-200 flex-col h-auto lg:h-full order-1 lg:order-none ${isFormHighlighted ? 'ring-4 ring-yellow-300 transition-all duration-500' : ''}`}>
+                   <div className={`${mobileSubTab === 'list' ? 'hidden' : 'flex'} lg:flex bg-white rounded-xl border border-gray-200 flex-col h-auto lg:h-full order-1 lg:order-none overflow-hidden ${isFormHighlighted ? 'ring-4 ring-yellow-300 transition-all duration-500' : ''}`}>
                       <div className="flex justify-between p-6 border-b border-gray-100 shrink-0 bg-white items-center">
                          <h3 className="font-bold text-blue-800">{editMode.active && editMode.collection==='companies' ? '기업 수정' : '새 기업 등록'}</h3>
                          <button onClick={() => setShowHelp('company')} className="text-gray-400 hover:text-blue-500"><HelpCircle size={20}/></button>
                          {editMode.active && editMode.collection==='companies' && <Button variant="ghost" onClick={() => cancelEdit(resetCompForm)}><XCircle size={14}/> 취소</Button>}
                       </div>
-                      <div className="flex-1 lg:overflow-y-auto p-6 custom-scrollbar space-y-4">
+                      <div className="flex-1 lg:overflow-y-auto p-6 custom-scrollbar space-y-4 min-h-0">
                          <InputField label="기업명" value={compForm.name} onChange={v=>setCompForm(p=>({...p, name:v}))} isHighlighted={isFormHighlighted} />
                          <InputField label="직무" value={compForm.role} onChange={v=>setCompForm(p=>({...p, role:v}))} isHighlighted={isFormHighlighted} />
                          {COMP_FIELDS.slice(2).map(f => (
