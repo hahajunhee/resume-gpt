@@ -48,7 +48,6 @@ const TABS = {
   GENERATOR: 'generator'
 };
 
-// [Updated] 10 Best Styles for Cover Letter
 const PRESET_STYLES = [
     { id: 's1', tone: '진정성/성장', focus: '꾸밈없는 태도와 꾸준한 성장 과정 강조' },
     { id: 's2', tone: '전문성/성과', focus: '구체적인 수치와 성과 중심의 논리적 서술' },
@@ -75,20 +74,20 @@ const EXP_QUESTIONS = [
   { id: 'future', label: '10. 향후 활용 방안' }
 ];
 
+// [Updated] Company Fields with shortLabel for Generator UI
 const COMP_FIELDS = [
-  { id: 'name', label: "기업명", placeholder: "예: 현대글로비스" },
-  { id: 'role', label: "지원 직무", placeholder: "예: 포워딩" },
-  { id: 'vision', label: "이 회사는 지금 '어디로' 가려고 하는가? (비전/방향성)", placeholder: "예: 스마트 모빌리티 솔루션 기업으로의 전환..." },
-  { id: 'business', label: "무엇으로 돈을 벌고, 최근 '집중'하는 일은? (주력/신사업)", placeholder: "예: 완성차 해상운송, 배터리 리사이클링 등..." },
-  { id: 'talent', label: "어떤 사람을 원하는가? (인재상 키워드 1~2개)", placeholder: "예: 도전적 실행, 소통과 협력" },
-  { id: 'jd_rnr', label: "[JD] 이 직무는 '무슨 일'을 하는가? (핵심 R&R 3가지)", placeholder: "1. 수출입 물류 운영 2. 운송 원가 관리..." },
-  { id: 'jd_skills', label: "[JD] 이 일을 하려면 '무엇을' 잘해야 하는가? (Hard/Soft)", placeholder: "Hard: 물류 프로세스 이해 / Soft: 문제해결력" },
-  { id: 'core_role_1', label: "핵심 직무 역할 1", placeholder: "예: SCM 프로세스 최적화" },
-  { id: 'core_role_2', label: "핵심 직무 역할 2", placeholder: "예: 글로벌 커뮤니케이션 역량" },
-  { id: 'market_issue', label: "이 '시장'의 가장 큰 화두는 무엇인가? (경쟁/트렌드)", placeholder: "예: 공급망 불안정성 증대, 친환경 물류 전환..." }
+  { id: 'name', label: "기업명", shortLabel: "기업명", placeholder: "예: 현대글로비스" },
+  { id: 'role', label: "지원 직무", shortLabel: "지원 직무", placeholder: "예: 포워딩" },
+  { id: 'vision', label: "비전/방향성 - 이 회사는 지금 '어디로' 가려고 하는가?", shortLabel: "비전/방향성", placeholder: "예: 스마트 모빌리티 솔루션 기업으로의 전환..." },
+  { id: 'business', label: "주력/신사업 - 무엇으로 돈을 벌고, 최근 '집중'하는 일은?", shortLabel: "주력/신사업", placeholder: "예: 완성차 해상운송, 배터리 리사이클링 등..." },
+  { id: 'talent', label: "인재상 - 어떤 사람을 원하는가? (키워드 1~2개)", shortLabel: "인재상", placeholder: "예: 도전적 실행, 소통과 협력" },
+  { id: 'jd_rnr', label: "핵심 R&R - [JD] 이 직무는 '무슨 일'을 하는가?", shortLabel: "핵심 R&R", placeholder: "1. 수출입 물류 운영 2. 운송 원가 관리..." },
+  { id: 'jd_skills', label: "직무 역량 - [JD] 이 일을 하려면 '무엇을' 잘해야 하는가? (Hard/Soft)", shortLabel: "직무 역량", placeholder: "Hard: 물류 프로세스 이해 / Soft: 문제해결력" },
+  { id: 'core_role_1', label: "핵심 직무 역할 1", shortLabel: "핵심 직무 역할 1", placeholder: "예: SCM 프로세스 최적화" },
+  { id: 'core_role_2', label: "핵심 직무 역할 2", shortLabel: "핵심 직무 역할 2", placeholder: "예: 글로벌 커뮤니케이션 역량" },
+  { id: 'market_issue', label: "경쟁/트렌드 - 이 '시장'의 가장 큰 화두는 무엇인가?", shortLabel: "경쟁/트렌드", placeholder: "예: 공급망 불안정성 증대, 친환경 물류 전환..." }
 ];
 
-// [Updated] Removed 'experienceList'
 const PROFILE_FIELDS = [
   { id: 'strength', label: '① 나의 강점' },
   { id: 'keywords', label: '② 핵심 키워드' },
@@ -422,7 +421,6 @@ export default function App() {
   const [compForm, setCompForm] = useState(
     COMP_FIELDS.reduce((acc, cur) => ({ ...acc, [cur.id]: '' }), {})
   );
-  // [Updated] Profile form without experienceList
   const [profForm, setProfForm] = useState({ 
     strength: [], keywords: [], values: [], goals: [] 
   });
@@ -1015,7 +1013,7 @@ ${expInfoStr}
                                    <label key={f.id} className="flex items-start gap-2 text-xs cursor-pointer p-1 hover:bg-white rounded">
                                       <input type="checkbox" className="mt-1 shrink-0" checked={!!selections.compFields[f.id]} onChange={() => setSelections(p => ({...p, compFields: {...p.compFields, [f.id]: !p.compFields[f.id]}}))} />
                                       <div>
-                                        <span className="font-bold block text-gray-700">{f.label.split('?')[0]}</span>
+                                        <span className="font-bold block text-gray-700">{f.shortLabel}</span> {/* Use shortLabel */}
                                         <span className="text-gray-500 block leading-tight">{c[f.id]}</span>
                                       </div>
                                    </label>
@@ -1065,10 +1063,10 @@ ${expInfoStr}
                       </div>
 
                       <div className="pb-10 md:pb-0">
-                          <label className="block text-sm font-bold text-gray-700 mb-2">문체 스타일 선택</label>
+                          <label className="block text-sm font-bold text-gray-700 mb-2">자소서 스타일 선택</label>
                           <select className="w-full p-2 border rounded bg-gray-50" value={selections.styleId} onChange={e => setSelections({...selections, styleId:e.target.value})}>
                               {PRESET_STYLES.map(s => (
-                                  <option key={s.id} value={s.id}>{s.tone}</option>
+                                  <option key={s.id} value={s.id}>{s.tone} - {s.focus}</option>
                               ))}
                           </select>
                       </div>
