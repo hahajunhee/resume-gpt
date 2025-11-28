@@ -13,11 +13,10 @@ import {
 } from 'firebase/firestore';
 import { 
   Save, Trash2, Copy, FileText, Briefcase, User, Layout, 
-  Database, Sparkles, Edit2, ChevronDown, CheckSquare, Square, XCircle, LogOut, Lock, Mail, AlertCircle, CheckCircle2, ArrowLeft, Plus, ArrowDown, MousePointerClick, GripHorizontal, Info, HelpCircle, X
+  Database, Sparkles, Edit2, ChevronDown, CheckSquare, Square, XCircle, LogOut, Lock, Mail, AlertCircle, CheckCircle2, ArrowLeft, Plus, ArrowDown, MousePointerClick, GripHorizontal, Info, HelpCircle, X, Maximize2, Minimize2
 } from 'lucide-react';
 
 // --- [중요] Firebase Configuration ---
-// 본인의 Firebase 설정값으로 변경해주세요.
 const firebaseConfig = {
   apiKey: "AIzaSyCRRqFzQJAIfbos7wg2GIItjzqmThrIZYc",
   authDomain: "jasoseo-cff03.firebaseapp.com",
@@ -94,7 +93,6 @@ const PROFILE_FIELDS = [
   { id: 'goals', label: '④ 장래 목표' }
 ];
 
-// Gemini Help Texts
 const GEMINI_COMPANY_HELP_TEXT = `해당 내용을 복사해서 제미나이에게 물어보면 더 빠르게 입력할 수 있어요.
 👇 (복사 후 수정해서 사용하세요)
 
@@ -145,7 +143,7 @@ const Button = ({ children, onClick, variant = 'primary', className = '', icon: 
 };
 
 const InputField = ({ label, value, onChange, placeholder, multiline = false, isHighlighted }) => (
-  <div className="mb-4">
+  <div className="mb-4 min-h-0">
     <label className="block text-sm font-semibold text-gray-700 mb-1">{label}</label>
     {multiline ? (
       <textarea
@@ -371,7 +369,10 @@ export default function App() {
   const [statusMsg, setStatusMsg] = useState(null); 
   const [editMode, setEditMode] = useState({ active: false, id: null, collection: null });
   const [isFormHighlighted, setIsFormHighlighted] = useState(false);
-  const [showHelp, setShowHelp] = useState(null); // 'company' | 'experience' | null
+  const [showHelp, setShowHelp] = useState(null); 
+  
+  // [New] Full Screen State for Prompt
+  const [isMaximized, setIsMaximized] = useState(false);
 
   const mainContentRef = useRef(null);
 
@@ -403,6 +404,8 @@ export default function App() {
 
   // --- Resize Handlers ---
   const startResize = (e) => {
+    // Disable resizing if maximized
+    if (isMaximized) return;
     isResizing.current = true;
     const clientY = e.touches ? e.touches[0].clientY : e.clientY;
     startY.current = clientY;
@@ -897,9 +900,42 @@ ${expInfoStr}
               </div>
 
               {/* Right Side: Result Area */}
-              <div ref={resultRef} onClick={copyToClipboard} style={{ height: window.innerWidth < 768 ? `${resultHeight}px` : 'auto', minHeight: window.innerWidth < 768 ? '100px' : '0' }} className="w-full md:w-5/12 bg-slate-900 rounded-xl p-6 text-slate-200 overflow-y-auto whitespace-pre-wrap font-mono text-sm border border-slate-700 mb-32 md:mb-0 relative transition-height duration-100 ease-out cursor-pointer hover:bg-slate-800 transition-colors" title="클릭하여 복사">
-                 <div className="md:hidden absolute top-0 left-0 right-0 h-8 flex items-center justify-center bg-slate-800 border-b border-slate-700 cursor-row-resize rounded-t-xl touch-none" onTouchStart={startResize} onMouseDown={startResize} onClick={(e) => e.stopPropagation()}><GripHorizontal className="text-slate-500" /></div>
-                 <div className="mt-4 md:mt-0">{generatedPrompt || "좌측에서 재료를 선택하여 프롬프트를 생성하세요."}</div>
+              <div 
+                ref={resultRef} 
+                onClick={copyToClipboard} 
+                style={!isMaximized ? { height: window.innerWidth < 768 ? `${resultHeight}px` : 'auto', minHeight: window.innerWidth < 768 ? '100px' : '0' } : {}}
+                className={`bg-slate-900 text-slate-200 overflow-y-auto whitespace-pre-wrap font-mono text-sm border border-slate-700 relative transition-all duration-300 ease-out cursor-pointer hover:bg-slate-800 
+                    ${isMaximized 
+                        ? 'fixed inset-0 z-[80] m-0 rounded-none w-full h-full p-8 pt-12' 
+                        : 'w-full md:w-5/12 rounded-xl p-6 mb-32 md:mb-0'
+                    }`}
+                title="클릭하여 복사"
+              >
+                 {/* Resize Handle (Mobile Only, when not maximized) */}
+                 {!isMaximized && (
+                    <div 
+                        className="md:hidden absolute top-0 left-0 right-0 h-8 flex items-center justify-center bg-slate-800 border-b border-slate-700 cursor-row-resize rounded-t-xl touch-none"
+                        onTouchStart={startResize}
+                        onMouseDown={startResize}
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <GripHorizontal className="text-slate-500" />
+                    </div>
+                 )}
+                 
+                 {/* Maximize/Minimize Toggle Button (Right Top) */}
+                 <div className="absolute top-2 right-2 z-10">
+                    <button 
+                        onClick={(e) => { e.stopPropagation(); setIsMaximized(!isMaximized); }}
+                        className="p-2 bg-slate-700 hover:bg-slate-600 rounded-full text-white shadow-md transition-colors"
+                    >
+                        {isMaximized ? <Minimize2 size={20} /> : <Maximize2 size={20} />}
+                    </button>
+                 </div>
+
+                 <div className={!isMaximized ? "mt-4 md:mt-0" : ""}>
+                    {generatedPrompt || "좌측에서 재료를 선택하여 프롬프트를 생성하세요."}
+                 </div>
               </div>
             </div>
           )}
