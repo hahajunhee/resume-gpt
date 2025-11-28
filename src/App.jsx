@@ -13,7 +13,7 @@ import {
 } from 'firebase/firestore';
 import { 
   Save, Trash2, Copy, FileText, Briefcase, User, Layout, 
-  Database, Sparkles, Edit2, ChevronDown, CheckSquare, Square, XCircle, LogOut, Lock, Mail, AlertCircle, CheckCircle2, ArrowLeft, Plus, ArrowDown, MousePointerClick, GripHorizontal, Info
+  Database, Sparkles, Edit2, ChevronDown, CheckSquare, Square, XCircle, LogOut, Lock, Mail, AlertCircle, CheckCircle2, ArrowLeft, Plus, ArrowDown, MousePointerClick, GripHorizontal, Info, HelpCircle, X
 } from 'lucide-react';
 
 // --- [중요] Firebase Configuration ---
@@ -74,7 +74,6 @@ const EXP_QUESTIONS = [
   { id: 'future', label: '10. 향후 활용 방안' }
 ];
 
-// [Updated] Company Fields with shortLabel for Generator UI
 const COMP_FIELDS = [
   { id: 'name', label: "기업명", shortLabel: "기업명", placeholder: "예: 현대글로비스" },
   { id: 'role', label: "지원 직무", shortLabel: "지원 직무", placeholder: "예: 포워딩" },
@@ -95,67 +94,19 @@ const PROFILE_FIELDS = [
   { id: 'goals', label: '④ 장래 목표' }
 ];
 
-// --- Default Data Sets ---
-const DEFAULT_COMPANIES = [
-  {
-    name: "삼성전자",
-    role: "미정",
-    vision: "미래 사회에 영감을 주고 새로운 미래를 창조한다.",
-    business: "반도체(DS), 스마트폰(DX), 가전 / AI 가전과 파운드리",
-    talent: "열정, 창의혁신, 인간미, 도덕성",
-    jd_rnr: "1. 기획 2. 분석 3. 관리",
-    jd_skills: "Hard: 데이터분석 / Soft: 협업",
-    core_role_1: "초격차 기술 확보",
-    core_role_2: "고객 경험 혁신",
-    market_issue: "AI 반도체 경쟁 심화"
-  },
-  {
-    name: "현대자동차",
-    role: "미정",
-    vision: "Progress for Humanity",
-    business: "EV, 수소차, UAM, 로보틱스",
-    talent: "도전적 실행, 소통과 협력",
-    jd_rnr: "1. 기획 2. 설계 3. 운영",
-    jd_skills: "Hard: 기구설계 / Soft: 유연함",
-    core_role_1: "전동화 전환",
-    core_role_2: "SW 기술 내재화",
-    market_issue: "전기차 수요 둔화 극복"
-  },
-  {
-    name: "LG",
-    role: "미정",
-    vision: "고객의 삶을 더 가치 있게 만드는 기업",
-    business: "가전, 전장, 배터리",
-    talent: "LG Way (고객가치, 인간존중)",
-    jd_rnr: "1. 제안 2. 발굴 3. 관리",
-    jd_skills: "Hard: 설계 / Soft: 끈기",
-    core_role_1: "시장 선도",
-    core_role_2: "디지털 전환(DX)",
-    market_issue: "구독 경제 모델 부상"
-  }
-];
+const GEMINI_HELP_TEXT = `해당 내용을 복사해서 제미나이에게 물어보면 더 빠르게 입력할 수 있어요.
+👇 (복사 후 수정해서 사용하세요)
 
-const DEFAULT_EXPERIENCES = [
-  {
-    title: "[예시] 대학 축제 주점 운영 프로젝트",
-    motivation: "학생회비 부족 문제를 해결하고 학과 단합을 도모하기 위해 기획",
-    obstacle: "예산 부족으로 인한 재료 수급 어려움과 팀원 간의 메뉴 선정 갈등",
-    action: "저렴한 대량 구매처를 직접 발굴하여 비용 20% 절감, 투표를 통한 민주적 메뉴 선정 및 R&R 명확화",
-    verification: "일일 매출 장부 기록 및 고객 만족도 스티커 설문 조사 실시",
-    result: "역대 축제 최고 매출 달성 (순수익 150만원), 학과 인지도 상승",
-    learning: "제한된 자원 내에서의 효율적 운영 방법과 갈등 관리의 중요성 체득",
-    similarity: "목표 달성을 위한 기획력과 문제 해결 능력이 직무와 유사함",
-    philosophy: "안 되면 되게 하라, 주도적인 태도로 문제를 돌파하는 자세",
-    future: "입사 후 프로젝트 진행 시 예상치 못한 변수에도 유연하게 대처하며 성과를 창출하겠음"
-  }
-];
+현재 [기업명] 기업의 [직무명] 직무에 대해 아래 정보를 찾아줘.
 
-const DEFAULT_PROFILE = {
-    strength: ["꼼꼼한 데이터 분석 능력", "긍정적인 소통 태도", "끝까지 파고드는 집요함"],
-    keywords: ["분석력", "책임감", "협업"],
-    values: ["신뢰를 최우선으로 생각함", "함께 성장하는 문화 지향"],
-    goals: ["데이터 기반 의사결정 전문가로 성장", "팀 내 대체 불가능한 핵심 인재 되기"]
-};
+1. 비전/방향성 - 이 회사는 지금 '어디로' 가려고 하는가?
+2. 주력/신사업 - 무엇으로 돈을 벌고, 최근 '집중'하는 일은?
+3. 인재상 - 어떤 사람을 원하는가? (키워드 1~2개)
+4. 핵심 R&R - [JD] 이 직무는 '무슨 일'을 하는가?
+5. 직무 역량 - [JD] 이 일을 하려면 '무엇을' 잘해야 하는가? (Hard/Soft)
+6. 핵심 직무 역할 1
+7. 핵심 직무 역할 2
+8. 경쟁/트렌드 - 이 '시장'의 가장 큰 화두는 무엇인가?`;
 
 // --- Components ---
 
@@ -180,7 +131,7 @@ const InputField = ({ label, value, onChange, placeholder, multiline = false, is
     <label className="block text-sm font-semibold text-gray-700 mb-1">{label}</label>
     {multiline ? (
       <textarea
-        className={`w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 min-h-[120px] transition-all duration-300 ${
+        className={`w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 min-h-[100px] transition-all duration-300 ${
             isHighlighted ? 'border-yellow-400 bg-yellow-50 ring-2 ring-yellow-200' : 'border-gray-300'
         }`}
         value={value || ''}
@@ -299,6 +250,7 @@ const Card = ({ title, children, onDelete, onEdit, expandedContent }) => {
 
 // --- Auth Component ---
 const AuthScreen = () => {
+  // (Auth Logic same as before - omitted for brevity, included in full code below)
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -311,13 +263,7 @@ const AuthScreen = () => {
     if (isSubmitting) return;
     setError('');
     setIsSubmitting(true);
-    
-    if (!auth) {
-      setError('Firebase 설정 오류. 코드를 확인해주세요.');
-      setIsSubmitting(false);
-      return;
-    }
-
+    if (!auth) { setError('Firebase 설정 오류.'); setIsSubmitting(false); return; }
     try {
       if (resetMode) {
         await sendPasswordResetEmail(auth, email);
@@ -329,11 +275,7 @@ const AuthScreen = () => {
         await createUserWithEmailAndPassword(auth, email, password);
       }
     } catch (err) {
-      console.error(err);
-      if (err.code === 'auth/invalid-credential') setError('이메일 또는 비밀번호가 틀렸습니다.');
-      else if (err.code === 'auth/email-already-in-use') setError('이미 사용 중인 이메일입니다.');
-      else if (err.code === 'auth/weak-password') setError('비밀번호는 6자 이상이어야 합니다.');
-      else setError('오류: ' + err.message);
+        setError('오류: ' + err.message);
     } finally {
       setIsSubmitting(false);
     }
@@ -349,42 +291,23 @@ const AuthScreen = () => {
           <h2 className="text-2xl font-bold text-gray-800">자소서 GPT</h2>
           <p className="text-gray-500 mt-1">{resetMode ? '비밀번호 재설정' : (isLogin ? '로그인' : '회원가입')}</p>
         </div>
-
         <form onSubmit={handleAuth} className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">이메일</label>
-            <div className="relative">
-              <Mail className="absolute left-3 top-3 text-gray-400" size={18} />
-              <input type="email" required className="w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="email@example.com" />
-            </div>
+            <input type="email" required className="w-full p-3 border rounded-lg" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="email@example.com" />
           </div>
-
           {!resetMode && (
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">비밀번호</label>
-              <div className="relative">
-                <Lock className="absolute left-3 top-3 text-gray-400" size={18} />
-                <input type="password" required className="w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="******" />
-              </div>
+              <input type="password" required className="w-full p-3 border rounded-lg" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="******" />
             </div>
           )}
-
           {error && <p className="text-red-500 text-sm text-center">{error}</p>}
-          <Button type="submit" disabled={isSubmitting} className="w-full py-2.5">
-            {isSubmitting ? '처리 중...' : (resetMode ? '전송' : (isLogin ? '로그인' : '회원가입'))}
-          </Button>
+          <Button type="submit" disabled={isSubmitting} className="w-full py-2.5">{isSubmitting ? '처리 중...' : (resetMode ? '전송' : (isLogin ? '로그인' : '회원가입'))}</Button>
         </form>
-
         <div className="mt-6 text-center text-sm text-gray-500">
-          {resetMode ? (
-            <button onClick={() => setResetMode(false)} className="text-blue-600 hover:underline">돌아가기</button>
-          ) : (
-            <>
-              {isLogin ? "계정이 없으신가요? " : "이미 계정이 있으신가요? "}
-              <button onClick={() => setIsLogin(!isLogin)} className="text-blue-600 font-semibold hover:underline">{isLogin ? '회원가입' : '로그인'}</button>
-              {isLogin && <div className="mt-2"><button onClick={() => setResetMode(true)} className="text-gray-400 hover:text-gray-600 text-xs">비밀번호 찾기</button></div>}
-            </>
-          )}
+          <button onClick={() => setIsLogin(!isLogin)} className="text-blue-600 hover:underline mr-4">{isLogin ? '회원가입' : '로그인'}</button>
+          <button onClick={() => setResetMode(!resetMode)} className="text-gray-500 hover:underline">{resetMode ? '돌아가기' : '비밀번호 찾기'}</button>
         </div>
       </div>
     </div>
@@ -396,17 +319,14 @@ const AuthScreen = () => {
 export default function App() {
   const [user, setUser] = useState(null);
   const [activeTab, setActiveTab] = useState(TABS.GENERATOR);
-  
-  // Mobile Sub Tab State ('form' | 'list')
   const [mobileSubTab, setMobileSubTab] = useState('form');
-
   const [tutorialStep, setTutorialStep] = useState(0);
   const [savingTarget, setSavingTarget] = useState(null);
   const [statusMsg, setStatusMsg] = useState(null); 
   const [editMode, setEditMode] = useState({ active: false, id: null, collection: null });
   const [isFormHighlighted, setIsFormHighlighted] = useState(false);
+  const [showHelp, setShowHelp] = useState(false); // Help popup state
 
-  // Refs for Scrolling
   const mainContentRef = useRef(null);
 
   // Data Stores
@@ -415,23 +335,11 @@ export default function App() {
   const [profile, setProfile] = useState(null);
 
   // Form States
-  const [expForm, setExpForm] = useState(
-    EXP_QUESTIONS.reduce((acc, cur) => ({ ...acc, [cur.id]: '' }), {})
-  );
-  const [compForm, setCompForm] = useState(
-    COMP_FIELDS.reduce((acc, cur) => ({ ...acc, [cur.id]: '' }), {})
-  );
-  const [profForm, setProfForm] = useState({ 
-    strength: [], keywords: [], values: [], goals: [] 
-  });
-
-  // Flags for Default Injection
-  const isProfileLoaded = useRef(false);
-  const isCompanyChecked = useRef(false); 
-  const isExperienceChecked = useRef(false);
-
+  const [expForm, setExpForm] = useState(EXP_QUESTIONS.reduce((acc, cur) => ({ ...acc, [cur.id]: '' }), {}));
+  const [compForm, setCompForm] = useState(COMP_FIELDS.reduce((acc, cur) => ({ ...acc, [cur.id]: '' }), {}));
+  const [profForm, setProfForm] = useState({ strength: [], keywords: [], values: [], goals: [] });
+  
   // Generator Selections
-  // [Updated] profDetail without experienceList
   const [selections, setSelections] = useState({
     expIds: [], compId: '', compFields: {}, 
     profDetail: { strength: [], keywords: [], values: [], goals: [] }, 
@@ -453,9 +361,7 @@ export default function App() {
     const clientY = e.touches ? e.touches[0].clientY : e.clientY;
     startY.current = clientY;
     startHeight.current = resultHeight;
-    
     if(e.touches) document.body.style.overflow = 'hidden'; 
-    
     window.addEventListener('mousemove', handleResizeMove);
     window.addEventListener('mouseup', stopResize);
     window.addEventListener('touchmove', handleResizeMove, { passive: false });
@@ -464,12 +370,10 @@ export default function App() {
 
   const handleResizeMove = (e) => {
     if (!isResizing.current) return;
-    
     const clientY = e.touches ? e.touches[0].clientY : e.clientY;
     const delta = startY.current - clientY; 
     const newHeight = Math.max(100, Math.min(window.innerHeight * 0.8, startHeight.current + delta));
     setResultHeight(newHeight);
-    
     if(e.cancelable) e.preventDefault(); 
   };
 
@@ -487,14 +391,11 @@ export default function App() {
     if (!auth) return;
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser);
-      if (currentUser) {
-        setTutorialStep(1);
-      }
+      if (currentUser) setTutorialStep(1);
     });
     return () => unsubscribe();
   }, []);
 
-  // Reset mobile sub-tab when main tab changes
   useEffect(() => {
     setMobileSubTab('form');
   }, [activeTab]);
@@ -504,112 +405,64 @@ export default function App() {
     
     const subExp = onSnapshot(
       query(collection(db, 'artifacts', appId, 'users', user.uid, 'experiences'), orderBy('createdAt', 'desc')),
-      async (snapshot) => {
-        const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-        setExperiences(data);
-        if (data.length === 0 && !isExperienceChecked.current) {
-          isExperienceChecked.current = true;
-          try {
-            const batch = writeBatch(db);
-            DEFAULT_EXPERIENCES.forEach(exp => {
-              const docRef = doc(collection(db, 'artifacts', appId, 'users', user.uid, 'experiences'));
-              batch.set(docRef, { ...exp, createdAt: serverTimestamp() });
-            });
-            await batch.commit();
-          } catch (e) { console.error(e); }
-        } else {
-          isExperienceChecked.current = true;
-        }
-      }
+      (snapshot) => setExperiences(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })))
     );
 
     const subComp = onSnapshot(
       query(collection(db, 'artifacts', appId, 'users', user.uid, 'companies'), orderBy('createdAt', 'desc')),
-      async (snapshot) => {
-        const loadedCompanies = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-        setCompanies(loadedCompanies);
-        if (loadedCompanies.length === 0 && !isCompanyChecked.current) {
-          isCompanyChecked.current = true;
-          try {
-            const batch = writeBatch(db);
-            DEFAULT_COMPANIES.forEach(comp => {
-              const docRef = doc(collection(db, 'artifacts', appId, 'users', user.uid, 'companies'));
-              batch.set(docRef, { ...comp, createdAt: serverTimestamp() });
-            });
-            await batch.commit();
-          } catch (e) { console.error(e); }
-        } else {
-          isCompanyChecked.current = true;
-        }
-      }
+      (snapshot) => setCompanies(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })))
     );
 
     const subProf = onSnapshot(
       query(collection(db, 'artifacts', appId, 'users', user.uid, 'profiles'), firestoreLimit(1)),
-      async (snapshot) => {
+      (snapshot) => {
          if (snapshot.empty) {
-           if (!isProfileLoaded.current) {
-             isProfileLoaded.current = true;
-             setProfForm(DEFAULT_PROFILE);
-             setProfile({ id: 'temp_id', ...DEFAULT_PROFILE });
-             try {
-               await addDoc(collection(db, 'artifacts', appId, 'users', user.uid, 'profiles'), {
-                 ...DEFAULT_PROFILE,
-                 createdAt: serverTimestamp()
-               });
-             } catch (e) { console.error(e); }
-           }
+           // Init empty profile logic could be here if needed
          } else {
            const docData = snapshot.docs[0];
            const newData = { ...docData.data() };
-           // Remove experienceList from compatibility check
-           const fieldsToCheck = PROFILE_FIELDS.map(f => f.id);
-           fieldsToCheck.forEach(fieldId => {
-             if (typeof newData[fieldId] === 'string') {
-                newData[fieldId] = newData[fieldId] ? [newData[fieldId]] : [];
-             } else if (!Array.isArray(newData[fieldId])) {
-                newData[fieldId] = [];
-             }
+           PROFILE_FIELDS.forEach(field => {
+             if (!Array.isArray(newData[field.id])) newData[field.id] = [];
            });
            setProfile({ id: docData.id, ...newData });
-           if (!isProfileLoaded.current) {
-             setProfForm(newData);
-             isProfileLoaded.current = true;
+           // Initial load for form
+           if (!editMode.active && activeTab === TABS.PROFILE) {
+              setProfForm(newData);
            }
          }
        }
     );
 
-    return () => {
-      subExp(); subComp(); subProf();
-    };
-  }, [user]);
+    return () => { subExp(); subComp(); subProf(); };
+  }, [user, activeTab]); // Added activeTab dependency to refresh form on tab switch if needed
 
-  // --- Tutorial Helpers ---
+  // --- Helpers ---
   const nextTutorial = () => {
     if (tutorialStep === 1) setTutorialStep(2);
-    else finishTutorial();
+    else setTutorialStep(0);
   };
 
-  const finishTutorial = () => setTutorialStep(0);
-
-  // --- Helper: Status Message ---
   const showStatus = (type, text) => {
     setStatusMsg({ type, text });
     setTimeout(() => setStatusMsg(null), 5000);
+  };
+
+  const copyGeminiHelp = () => {
+    navigator.clipboard.writeText(GEMINI_HELP_TEXT).then(() => {
+        alert("제미나이 질문 양식이 복사되었습니다!");
+        setShowHelp(false);
+    });
   };
 
   // --- CRUD Operations ---
   const handleSave = async (targetName, colName, data, clearFn) => {
     if (!user) return alert("로그인이 필요합니다.");
     if (savingTarget) return;
-
     setSavingTarget(targetName); 
     setStatusMsg(null);
     
     try {
       const colRef = collection(db, 'artifacts', appId, 'users', user.uid, colName);
-      
       if (editMode.active && editMode.collection === colName) {
         await updateDoc(doc(colRef, editMode.id), { ...data, updatedAt: serverTimestamp() });
         setEditMode({ active: false, id: null, collection: null });
@@ -648,38 +501,22 @@ export default function App() {
   };
 
   const handleLogout = async () => {
-    if(confirm('로그아웃 하시겠습니까?')) {
-      await signOut(auth);
-    }
+    if(confirm('로그아웃 하시겠습니까?')) await signOut(auth);
   };
 
-  // --- Reset Helpers ---
   const resetExpForm = () => setExpForm(EXP_QUESTIONS.reduce((acc, cur) => ({ ...acc, [cur.id]: '' }), {}));
   const resetCompForm = () => setCompForm(COMP_FIELDS.reduce((acc, cur) => ({ ...acc, [cur.id]: '' }), {}));
   
   const handleEdit = (colName, item, setFormFn) => {
     setFormFn(item); 
     setEditMode({ active: true, id: item.id, collection: colName });
-    
-    // Switch to form view on mobile
     setMobileSubTab('form');
-
-    // [Fix] Scroll the main content container to top
-    if (mainContentRef.current) {
-        mainContentRef.current.scrollTo({ top: 0, behavior: 'smooth' });
-    }
-
-    // [New] Visual Cue (Flashing)
+    if (mainContentRef.current) mainContentRef.current.scrollTo({ top: 0, behavior: 'smooth' });
     setIsFormHighlighted(true);
     setTimeout(() => setIsFormHighlighted(false), 2000);
-
-    // [New] Message based on device width
-    const isMobile = window.innerWidth < 768;
-    const msg = isMobile 
-      ? "모든 수정이 완료후 저장버튼을 눌러주세요!" 
-      : "내용을 수정한 뒤 하단의 '수정 완료' 버튼을 눌러주세요.";
     
-    showStatus('info', msg);
+    const isMobile = window.innerWidth < 768;
+    showStatus('info', isMobile ? "모든 수정이 완료후 저장버튼을 눌러주세요!" : "내용을 수정한 뒤 하단의 '수정 완료' 버튼을 눌러주세요.");
   };
 
   const cancelEdit = (clearFn) => {
@@ -691,13 +528,9 @@ export default function App() {
     if (!confirm('정말 삭제하시겠습니까?')) return;
     try {
       await deleteDoc(doc(db, 'artifacts', appId, 'users', user.uid, colName, id));
-    } catch (e) { 
-      console.error(e);
-      alert('삭제 실패: ' + e.message);
-    }
+    } catch (e) { alert('삭제 실패: ' + e.message); }
   };
 
-  // --- Generator Helpers ---
   const toggleProfileItem = (fieldId, itemText) => {
     setSelections(prev => {
       const currentList = prev.profDetail[fieldId] || [];
@@ -712,7 +545,6 @@ export default function App() {
     });
   };
 
-  // --- Generator Logic ---
   const generatePrompt = () => {
     if (selections.expIds.length === 0) return alert("최소 1개 이상의 경험을 선택해주세요.");
     if (!selections.compId) return alert("기업 정보를 선택해주세요.");
@@ -723,13 +555,11 @@ export default function App() {
 
     let compInfoStr = `기업명: ${selComp.name} / 직무: ${selComp.role}\n`;
     COMP_FIELDS.forEach(field => {
-       // [Updated] Filter out name and role from detailed checkboxes
        if(field.id !== 'name' && field.id !== 'role' && selections.compFields[field.id] && selComp[field.id]) {
          compInfoStr += `- ${field.label}: ${selComp[field.id]}\n`;
        }
     });
 
-    // Build Profile Info
     let profInfoStr = "";
     let hasProfData = false;
     PROFILE_FIELDS.forEach(field => {
@@ -780,11 +610,7 @@ ${expInfoStr}
 위 지침을 준수하여 최고의 자기소개서 초안을 작성해주세요.
 `;
     setGeneratedPrompt(prompt);
-    
-    // Auto-scroll to result (Desktop/Mobile)
-    setTimeout(() => {
-        resultRef.current?.scrollIntoView({ behavior: 'smooth' });
-    }, 100);
+    setTimeout(() => { resultRef.current?.scrollIntoView({ behavior: 'smooth' }); }, 100);
   };
 
   const copyToClipboard = () => {
@@ -792,8 +618,7 @@ ${expInfoStr}
     navigator.clipboard.writeText(generatedPrompt).then(() => showStatus('success', '클립보드에 복사되었습니다!')).catch(() => alert('복사 실패'));
   };
 
-  // --- Helper Components ---
-  // Mobile Navigation Components
+  // --- Mobile Nav ---
   const MobileNav = ({ activeTab, setActiveTab, setEditMode }) => {
     const tabs = [
       { id: TABS.GENERATOR, icon: Layout, label: '생성' },
@@ -801,17 +626,10 @@ ${expInfoStr}
       { id: TABS.COMPANY, icon: Briefcase, label: '기업' },
       { id: TABS.PROFILE, icon: User, label: '정보' },
     ];
-
     return (
       <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 flex justify-around items-center h-16 z-[60] pb-safe">
         {tabs.map((tab) => (
-          <button
-            key={tab.id}
-            onClick={() => { setActiveTab(tab.id); setEditMode({ active: false, id: null, collection: null }); }}
-            className={`flex flex-col items-center justify-center w-full h-full ${
-              activeTab === tab.id ? 'text-blue-600' : 'text-gray-400'
-            }`}
-          >
+          <button key={tab.id} onClick={() => { setActiveTab(tab.id); setEditMode({ active: false, id: null, collection: null }); }} className={`flex flex-col items-center justify-center w-full h-full ${activeTab === tab.id ? 'text-blue-600' : 'text-gray-400'}`}>
             <tab.icon size={24} className={activeTab === tab.id ? 'fill-blue-100' : ''} />
             <span className="text-[10px] mt-1 font-medium">{tab.label}</span>
           </button>
@@ -820,7 +638,7 @@ ${expInfoStr}
     );
   };
 
-  // Sidebar for Desktop (Unchanged logic, just hidden on mobile)
+  // --- Sidebar ---
   const Sidebar = ({ activeTab, setActiveTab, setEditMode, tutorialStep, user, handleLogout }) => (
     <div className={`hidden md:flex w-64 bg-white border-r border-gray-200 flex-col shadow-lg relative ${tutorialStep > 0 ? 'z-auto' : 'z-10'}`}>
         <div className="p-6 border-b border-gray-100">
@@ -830,15 +648,21 @@ ${expInfoStr}
         </div>
         <nav className="flex-1 p-4 overflow-y-auto">
           <div className={tutorialStep === 2 ? "relative z-[60]" : ""}>
-             <NavItem id={TABS.GENERATOR} icon={Layout} label="프롬프트 생성기" highlighted={tutorialStep === 2} activeTab={activeTab} onClick={() => { setActiveTab(TABS.GENERATOR); setEditMode({active:false,id:null,collection:null}); }} />
+             <button onClick={() => { setActiveTab(TABS.GENERATOR); setEditMode({active:false,id:null,collection:null}); }} className={`flex items-center gap-2 px-4 py-3 rounded-lg w-full text-left transition-all duration-300 mb-1 ${activeTab === TABS.GENERATOR ? 'bg-blue-600 text-white shadow-md' : 'text-gray-600 hover:bg-blue-50'} ${tutorialStep === 2 ? 'ring-4 ring-yellow-400 scale-105 bg-white text-blue-700' : ''}`}>
+                <Layout size={20}/> <span className="font-medium">프롬프트 생성기</span>
+             </button>
           </div>
-          
           <div className="text-xs font-bold text-gray-400 mt-6 mb-2 px-4 uppercase">데이터 관리</div>
-          
           <div className={`transition-all duration-300 ${tutorialStep === 1 ? 'relative z-[60] bg-white p-2 -m-2 rounded-xl ring-4 ring-yellow-400 shadow-2xl' : ''}`}>
-            <NavItem id={TABS.EXPERIENCE} icon={FileText} label="1. 경험 (Experience)" activeTab={activeTab} onClick={() => { setActiveTab(TABS.EXPERIENCE); setEditMode({active:false,id:null,collection:null}); }} />
-            <NavItem id={TABS.COMPANY} icon={Briefcase} label="2. 기업 (Company)" activeTab={activeTab} onClick={() => { setActiveTab(TABS.COMPANY); setEditMode({active:false,id:null,collection:null}); }} />
-            <NavItem id={TABS.PROFILE} icon={User} label="3. 자기 정보 (Me)" activeTab={activeTab} onClick={() => { setActiveTab(TABS.PROFILE); setEditMode({active:false,id:null,collection:null}); }} />
+            {[
+                {id: TABS.EXPERIENCE, icon: FileText, label: "1. 경험 (Experience)"},
+                {id: TABS.COMPANY, icon: Briefcase, label: "2. 기업 (Company)"},
+                {id: TABS.PROFILE, icon: User, label: "3. 자기 정보 (Me)"}
+            ].map(item => (
+                <button key={item.id} onClick={() => { setActiveTab(item.id); setEditMode({active:false,id:null,collection:null}); }} className={`flex items-center gap-2 px-4 py-3 rounded-lg w-full text-left transition-all mb-1 ${activeTab === item.id ? 'bg-blue-600 text-white shadow-md' : 'text-gray-600 hover:bg-blue-50'}`}>
+                    <item.icon size={20}/> <span className="font-medium">{item.label}</span>
+                </button>
+            ))}
           </div>
         </nav>
         <div className="p-4 bg-gray-50 border-t">
@@ -848,86 +672,52 @@ ${expInfoStr}
     </div>
   );
 
-  // NavItem for Sidebar
-  const NavItem = ({ id, icon: Icon, label, highlighted, activeTab, onClick }) => (
-    <button 
-      onClick={onClick} 
-      className={`flex items-center gap-2 px-4 py-3 rounded-lg w-full text-left transition-all duration-300 mb-1 ${
-        highlighted 
-          ? 'relative z-[60] bg-white ring-4 ring-yellow-400 shadow-2xl text-blue-700 font-bold scale-105' 
-          : activeTab === id 
-            ? 'bg-blue-600 text-white shadow-md' 
-            : 'text-gray-600 hover:bg-blue-50'
-      }`}
-    >
-      <Icon size={20} /> <span className="font-medium">{label}</span>
-    </button>
-  );
-
   if (!auth) return <div className="p-10 text-red-500">Firebase 설정 오류</div>;
   if (!user) return <AuthScreen />;
 
   return (
     <div className="flex h-screen bg-gray-100 font-sans overflow-hidden relative">
       
-      {/* Tutorial Overlay (Responsive) */}
+      {/* Help Popup */}
+      {showHelp && (
+        <div className="fixed inset-0 bg-black/50 z-[70] flex items-center justify-center p-4" onClick={() => setShowHelp(false)}>
+           <div className="bg-white rounded-xl shadow-2xl max-w-md w-full overflow-hidden animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
+              <div className="p-4 border-b border-gray-100 flex justify-between items-center bg-blue-50">
+                 <h3 className="font-bold text-blue-800 flex items-center gap-2"><Sparkles size={18}/> 제미나이 질문 도우미</h3>
+                 <button onClick={() => setShowHelp(false)} className="text-gray-400 hover:text-gray-600"><XCircle size={20}/></button>
+              </div>
+              <div className="p-6 bg-gray-50">
+                 <p className="text-sm text-gray-600 mb-4">아래 내용을 복사해서 제미나이(또는 ChatGPT)에게 물어보면 <br/>기업 분석 정보를 빠르게 채울 수 있습니다!</p>
+                 <div className="bg-white border border-gray-200 rounded-lg p-3 text-xs font-mono text-gray-700 whitespace-pre-wrap mb-4 shadow-inner">
+                    {GEMINI_HELP_TEXT}
+                 </div>
+                 <Button className="w-full" onClick={copyGeminiHelp} icon={Copy}>양식 복사하기</Button>
+              </div>
+           </div>
+        </div>
+      )}
+
+      {/* Tutorial Overlay */}
       {tutorialStep > 0 && (
         <div className="fixed inset-0 bg-black/70 z-50 cursor-pointer animate-in fade-in duration-300" onClick={nextTutorial}>
-          {/* Step 1: Desktop */}
           {tutorialStep === 1 && (
             <div className="hidden md:block absolute left-[280px] top-[40%] text-white animate-bounce-x">
-              <div className="flex items-center gap-4">
-                <ArrowLeft size={48} className="text-yellow-400" />
-                <div>
-                  <h2 className="text-3xl font-bold text-yellow-400 mb-2">1단계: 재료 준비</h2>
-                  <p className="text-xl font-medium">먼저 이 4개 탭에서 <br/>자신의 경험과 기업 정보를 작성해주세요.</p>
-                </div>
-              </div>
+              <div className="flex items-center gap-4"><ArrowLeft size={48} className="text-yellow-400" /><div><h2 className="text-3xl font-bold text-yellow-400 mb-2">1단계: 재료 준비</h2><p className="text-xl font-medium">먼저 이 3개 탭에서 <br/>자신의 경험과 기업 정보를 작성해주세요.</p></div></div>
             </div>
           )}
-          {/* Step 1: Mobile */}
           {tutorialStep === 1 && (
             <div className="md:hidden absolute bottom-20 left-1/2 -translate-x-1/2 text-white text-center w-full px-4 animate-bounce-y">
-               <div className="flex flex-col items-center gap-2">
-                  <div className="text-yellow-400"><ArrowDown size={40} /></div>
-                  <h2 className="text-2xl font-bold text-yellow-400">1단계: 재료 준비</h2>
-                  <p className="text-lg">하단 탭을 눌러<br/>경험과 정보를 채워주세요.</p>
-               </div>
+               <div className="flex flex-col items-center gap-2"><div className="text-yellow-400"><ArrowDown size={40} /></div><h2 className="text-2xl font-bold text-yellow-400">1단계: 재료 준비</h2><p className="text-lg">하단 탭을 눌러<br/>경험과 정보를 채워주세요.</p></div>
             </div>
           )}
-
-          {/* Step 2: Desktop */}
           {tutorialStep === 2 && (
             <div className="hidden md:block absolute left-[280px] top-14 text-white">
-              <div className="flex items-center gap-4">
-                <ArrowLeft size={48} className="text-yellow-400" />
-                <div>
-                  <h2 className="text-3xl font-bold text-yellow-400 mb-2">2단계: 요리하기</h2>
-                  <p className="text-xl font-medium">프롬프트 생성기로 이동하여 <br/>1단계에서 작성한 재료를 조립하세요.</p>
-                  <button 
-                    onClick={(e) => { e.stopPropagation(); finishTutorial(); }}
-                    className="mt-4 bg-yellow-400 text-black font-bold py-2 px-6 rounded-full hover:bg-yellow-300 transition-colors flex items-center gap-2"
-                  >
-                    사용해보러 가기 <ChevronDown className="-rotate-90"/>
-                  </button>
-                </div>
-              </div>
+              <div className="flex items-center gap-4"><ArrowLeft size={48} className="text-yellow-400" /><div><h2 className="text-3xl font-bold text-yellow-400 mb-2">2단계: 요리하기</h2><p className="text-xl font-medium">프롬프트 생성기로 이동하여 <br/>1단계에서 작성한 재료를 조립하세요.</p><button onClick={(e) => { e.stopPropagation(); finishTutorial(); }} className="mt-4 bg-yellow-400 text-black font-bold py-2 px-6 rounded-full hover:bg-yellow-300 transition-colors flex items-center gap-2">사용해보러 가기 <ChevronDown className="-rotate-90"/></button></div></div>
             </div>
           )}
-          {/* Step 2: Mobile */}
           {tutorialStep === 2 && (
              <div className="md:hidden absolute bottom-20 left-4 text-white w-full px-4 animate-bounce-y">
-                <div className="flex flex-col items-start gap-2">
-                   <div className="text-yellow-400 ml-4"><ArrowDown size={40} /></div>
-                   <h2 className="text-2xl font-bold text-yellow-400">2단계: 프롬프트 생성</h2>
-                   <p className="text-lg">여기서 재료를 조립해<br/>최고의 자소서를 만드세요.</p>
-                   <button 
-                    onClick={(e) => { e.stopPropagation(); finishTutorial(); }}
-                    className="mt-4 bg-yellow-400 text-black font-bold py-2 px-6 rounded-full hover:bg-yellow-300"
-                  >
-                    시작하기
-                  </button>
-                </div>
+                <div className="flex flex-col items-start gap-2"><div className="text-yellow-400 ml-4"><ArrowDown size={40} /></div><h2 className="text-2xl font-bold text-yellow-400">2단계: 프롬프트 생성</h2><p className="text-lg">여기서 재료를 조립해<br/>최고의 자소서를 만드세요.</p><button onClick={(e) => { e.stopPropagation(); finishTutorial(); }} className="mt-4 bg-yellow-400 text-black font-bold py-2 px-6 rounded-full hover:bg-yellow-300">시작하기</button></div>
              </div>
           )}
         </div>
@@ -935,13 +725,11 @@ ${expInfoStr}
 
       {/* Mobile Header */}
       <div className="md:hidden fixed top-0 left-0 right-0 h-14 bg-white border-b border-gray-200 flex items-center justify-between px-4 z-40">
-         <div className="flex items-center gap-2 text-blue-700 font-bold text-lg">
-            <Sparkles className="fill-blue-600" size={20} /> <span>자소서 GPT</span>
-         </div>
+         <div className="flex items-center gap-2 text-blue-700 font-bold text-lg"><Sparkles className="fill-blue-600" size={20} /> <span>자소서 GPT</span></div>
          <button onClick={handleLogout} className="text-gray-500"><LogOut size={20}/></button>
       </div>
 
-      {/* Sidebar (Desktop Only) */}
+      {/* Sidebar */}
       <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} setEditMode={setEditMode} tutorialStep={tutorialStep} user={user} handleLogout={handleLogout} />
 
       {/* Main Content */}
@@ -956,20 +744,15 @@ ${expInfoStr}
           </h2>
           <div className="flex items-center gap-4">
             {activeTab === TABS.GENERATOR && generatedPrompt && <Button onClick={copyToClipboard} icon={Copy}>복사</Button>}
-            <button onClick={handleLogout} className="text-gray-500 hover:text-red-600 flex items-center gap-1 font-medium text-sm transition-colors">
-              <LogOut size={18}/> 로그아웃
-            </button>
+            <button onClick={handleLogout} className="text-gray-500 hover:text-red-600 flex items-center gap-1 font-medium text-sm transition-colors"><LogOut size={18}/> 로그아웃</button>
           </div>
         </header>
 
-        <main ref={mainContentRef} className="flex-1 overflow-y-auto p-4 md:p-8 bg-gray-100 relative">
+        {/* PC: overflow-hidden, Mobile: overflow-y-auto */}
+        <main ref={mainContentRef} className="flex-1 md:overflow-hidden overflow-y-auto p-4 md:p-8 bg-gray-100 relative">
           {/* Status Toast */}
           {statusMsg && (
-            <div className={`absolute top-4 left-1/2 -translate-x-1/2 z-[70] p-3 rounded-full shadow-lg border animate-in slide-in-from-top-4 fade-in duration-200 flex items-center gap-2 font-medium ${
-                statusMsg.type === 'success' ? 'bg-green-100 border-green-200 text-green-800' : 
-                statusMsg.type === 'info' ? 'bg-blue-100 border-blue-200 text-blue-800' :
-                'bg-red-100 border-red-200 text-red-800'
-            }`}>
+            <div className={`absolute top-4 left-1/2 -translate-x-1/2 z-[70] p-3 rounded-full shadow-lg border animate-in slide-in-from-top-4 fade-in duration-200 flex items-center gap-2 font-medium ${statusMsg.type === 'success' ? 'bg-green-100 border-green-200 text-green-800' : statusMsg.type === 'info' ? 'bg-blue-100 border-blue-200 text-blue-800' : 'bg-red-100 border-red-200 text-red-800'}`}>
                 {statusMsg.type === 'success' ? <CheckCircle2 size={18}/> : statusMsg.type === 'info' ? <Info size={18}/> : <AlertCircle size={18}/>}
                 {statusMsg.text}
             </div>
@@ -981,12 +764,7 @@ ${expInfoStr}
               {/* Left Side: Inputs Area */}
               <div className="w-full md:w-7/12 flex flex-col h-full overflow-hidden">
                  <div className="bg-white rounded-xl shadow-sm border border-gray-200 flex flex-col h-full">
-                    {/* Header */}
-                    <div className="p-4 border-b border-gray-100 shrink-0">
-                      <h3 className="font-bold text-lg text-gray-800">재료 선택</h3>
-                    </div>
-
-                    {/* Scrollable Content */}
+                    <div className="p-4 border-b border-gray-100 shrink-0"><h3 className="font-bold text-lg text-gray-800">재료 선택</h3></div>
                     <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-6 custom-scrollbar">
                       <div>
                         <label className="block text-xs font-bold text-gray-500 mb-1">질문 유형 / 글자수</label>
@@ -1012,10 +790,7 @@ ${expInfoStr}
                                  return (
                                    <label key={f.id} className="flex items-start gap-2 text-xs cursor-pointer p-1 hover:bg-white rounded">
                                       <input type="checkbox" className="mt-1 shrink-0" checked={!!selections.compFields[f.id]} onChange={() => setSelections(p => ({...p, compFields: {...p.compFields, [f.id]: !p.compFields[f.id]}}))} />
-                                      <div>
-                                        <span className="font-bold block text-gray-700">{f.shortLabel}</span> {/* Use shortLabel */}
-                                        <span className="text-gray-500 block leading-tight">{c[f.id]}</span>
-                                      </div>
+                                      <div><span className="font-bold block text-gray-700">{f.shortLabel}</span><span className="text-gray-500 block leading-tight">{c[f.id]}</span></div>
                                    </label>
                                  )
                               })}
@@ -1027,8 +802,7 @@ ${expInfoStr}
                          <label className="block text-sm font-bold text-gray-700 mb-2">경험 선택 ({selections.expIds.length})</label>
                          <div className="max-h-40 overflow-y-auto border rounded bg-gray-50 p-2 space-y-1">
                             {experiences.map(e => (
-                               <div key={e.id} onClick={() => setSelections(p => ({...p, expIds: p.expIds.includes(e.id) ? p.expIds.filter(x=>x!==e.id) : [...p.expIds, e.id]}))} 
-                                    className={`p-2 rounded text-sm cursor-pointer flex gap-2 ${selections.expIds.includes(e.id) ? 'bg-blue-100 text-blue-800' : 'hover:bg-gray-200'}`}>
+                               <div key={e.id} onClick={() => setSelections(p => ({...p, expIds: p.expIds.includes(e.id) ? p.expIds.filter(x=>x!==e.id) : [...p.expIds, e.id]}))} className={`p-2 rounded text-sm cursor-pointer flex gap-2 ${selections.expIds.includes(e.id) ? 'bg-blue-100 text-blue-800' : 'hover:bg-gray-200'}`}>
                                   {selections.expIds.includes(e.id)?<CheckSquare size={16} className="shrink-0"/>:<Square size={16} className="shrink-0"/>} <span className="truncate">{e.title}</span>
                                </div>
                             ))}
@@ -1053,9 +827,7 @@ ${expInfoStr}
                                           </label>
                                         ))}
                                       </div>
-                                    ) : (
-                                      <p className="text-xs text-gray-400 pl-1">(작성된 항목 없음)</p>
-                                    )}
+                                    ) : <p className="text-xs text-gray-400 pl-1">(작성된 항목 없음)</p>}
                                  </div>
                                )
                             })}
@@ -1065,44 +837,22 @@ ${expInfoStr}
                       <div className="pb-10 md:pb-0">
                           <label className="block text-sm font-bold text-gray-700 mb-2">자소서 스타일 선택</label>
                           <select className="w-full p-2 border rounded bg-gray-50" value={selections.styleId} onChange={e => setSelections({...selections, styleId:e.target.value})}>
-                              {PRESET_STYLES.map(s => (
-                                  <option key={s.id} value={s.id}>{s.tone} - {s.focus}</option>
-                              ))}
+                              {PRESET_STYLES.map(s => (<option key={s.id} value={s.id}>{s.tone} - {s.focus}</option>))}
                           </select>
                       </div>
                     </div>
 
-                    {/* Fixed Button (PC/Mobile Bottom) */}
                     <div className="p-4 border-t border-gray-100 shrink-0 bg-white md:relative fixed bottom-16 left-0 right-0 md:bottom-0 md:left-auto md:right-auto z-50 md:z-auto shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] md:shadow-none">
-                       {/* Mobile Scroll Hint (Only visible on mobile) */}
-                       <div className="md:hidden absolute -top-12 left-1/2 -translate-x-1/2 text-blue-500 animate-bounce pointer-events-none bg-white/90 rounded-full p-2 shadow-sm border border-gray-100">
-                          <ArrowDown size={20} />
-                       </div>
+                       <div className="md:hidden absolute -top-12 left-1/2 -translate-x-1/2 text-blue-500 animate-bounce pointer-events-none bg-white/90 rounded-full p-2 shadow-sm border border-gray-100"><ArrowDown size={20} /></div>
                        <Button className="w-full py-3 shadow-lg md:shadow-none text-lg md:text-base font-bold" onClick={generatePrompt} disabled={savingTarget === 'generator'} icon={Sparkles}>프롬프트 생성</Button>
                     </div>
                  </div>
               </div>
 
               {/* Right Side: Result Area */}
-              <div 
-                ref={resultRef} 
-                onClick={copyToClipboard} 
-                style={{ height: window.innerWidth < 768 ? `${resultHeight}px` : 'auto', minHeight: window.innerWidth < 768 ? '100px' : '0' }}
-                className="w-full md:w-5/12 bg-slate-900 rounded-xl p-6 text-slate-200 overflow-y-auto whitespace-pre-wrap font-mono text-sm border border-slate-700 mb-32 md:mb-0 relative transition-height duration-100 ease-out cursor-pointer hover:bg-slate-800 transition-colors"
-                title="클릭하여 복사"
-              >
-                 <div 
-                    className="md:hidden absolute top-0 left-0 right-0 h-8 flex items-center justify-center bg-slate-800 border-b border-slate-700 cursor-row-resize rounded-t-xl touch-none"
-                    onTouchStart={startResize}
-                    onMouseDown={startResize}
-                    onClick={(e) => e.stopPropagation()} 
-                 >
-                    <GripHorizontal className="text-slate-500" />
-                 </div>
-                 
-                 <div className="mt-4 md:mt-0">
-                    {generatedPrompt || "좌측에서 재료를 선택하여 프롬프트를 생성하세요."}
-                 </div>
+              <div ref={resultRef} onClick={copyToClipboard} style={{ height: window.innerWidth < 768 ? `${resultHeight}px` : 'auto', minHeight: window.innerWidth < 768 ? '100px' : '0' }} className="w-full md:w-5/12 bg-slate-900 rounded-xl p-6 text-slate-200 overflow-y-auto whitespace-pre-wrap font-mono text-sm border border-slate-700 mb-32 md:mb-0 relative transition-height duration-100 ease-out cursor-pointer hover:bg-slate-800 transition-colors" title="클릭하여 복사">
+                 <div className="md:hidden absolute top-0 left-0 right-0 h-8 flex items-center justify-center bg-slate-800 border-b border-slate-700 cursor-row-resize rounded-t-xl touch-none" onTouchStart={startResize} onMouseDown={startResize} onClick={(e) => e.stopPropagation()}><GripHorizontal className="text-slate-500" /></div>
+                 <div className="mt-4 md:mt-0">{generatedPrompt || "좌측에서 재료를 선택하여 프롬프트를 생성하세요."}</div>
               </div>
             </div>
           )}
@@ -1110,51 +860,29 @@ ${expInfoStr}
           {/* Experience Tab (Mobile Tabs Implementation) */}
           {activeTab === TABS.EXPERIENCE && (
             <>
-               {/* Mobile Toggle Tabs */}
                <div className="md:hidden flex mb-4 bg-gray-200 p-1 rounded-lg shrink-0">
-                  <button 
-                     className={`flex-1 py-2 text-sm font-bold rounded-md transition-all ${mobileSubTab === 'form' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-500'}`}
-                     onClick={() => setMobileSubTab('form')}
-                  >
-                     ✏️ 작성하기
-                  </button>
-                  <button 
-                     className={`flex-1 py-2 text-sm font-bold rounded-md transition-all ${mobileSubTab === 'list' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-500'}`}
-                     onClick={() => setMobileSubTab('list')}
-                  >
-                     📋 목록 ({experiences.length})
-                  </button>
+                  <button className={`flex-1 py-2 text-sm font-bold rounded-md transition-all ${mobileSubTab === 'form' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-500'}`} onClick={() => setMobileSubTab('form')}>✏️ 작성하기</button>
+                  <button className={`flex-1 py-2 text-sm font-bold rounded-md transition-all ${mobileSubTab === 'list' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-500'}`} onClick={() => setMobileSubTab('list')}>📋 목록 ({experiences.length})</button>
                </div>
-
-               <div className="flex flex-col lg:grid lg:grid-cols-2 gap-6 h-auto lg:h-full">
-                  {/* Form Section */}
-                  <div className={`${mobileSubTab === 'list' ? 'hidden' : 'flex'} lg:flex bg-white p-6 rounded-xl border border-gray-200 flex-col h-auto lg:h-full order-1 lg:order-none ${isFormHighlighted ? 'ring-4 ring-yellow-300 transition-all duration-500' : ''}`}>
-                     <div className="flex justify-between mb-4 border-b border-gray-100 pb-2">
+               <div className="flex flex-col md:grid md:grid-cols-2 gap-6 h-auto md:h-full">
+                  {/* PC: h-full & overflow-hidden to allow inner scroll. Mobile: h-auto & no overflow hidden */}
+                  <div className={`${mobileSubTab === 'list' ? 'hidden' : 'flex'} md:flex bg-white rounded-xl border border-gray-200 flex-col h-auto md:h-full order-1 md:order-none ${isFormHighlighted ? 'ring-4 ring-yellow-300 transition-all duration-500' : ''}`}>
+                     <div className="flex justify-between p-6 border-b border-gray-100 shrink-0 bg-white">
                         <h3 className="font-bold text-blue-800">{editMode.active && editMode.collection==='experiences' ? '경험 수정' : '새 경험 등록'}</h3>
                         {editMode.active && editMode.collection==='experiences' && <Button variant="ghost" onClick={() => cancelEdit(resetExpForm)}><XCircle size={14}/> 취소</Button>}
                      </div>
-                     
-                     {/* Inputs Container - No scroll lock on mobile */}
-                     <div className="flex-1 lg:overflow-y-auto lg:pr-2 custom-scrollbar space-y-4">
+                     <div className="flex-1 md:overflow-y-auto p-6 custom-scrollbar space-y-4">
                         {EXP_QUESTIONS.map(q => (
                            <InputField key={q.id} label={q.label} value={expForm[q.id]} onChange={v => setExpForm(p => ({...p, [q.id]: v}))} multiline={q.id!=='title'} isHighlighted={isFormHighlighted} />
                         ))}
-                        {/* Mobile Save Button inside form flow */}
-                        <div className="lg:hidden pt-4 pb-10">
-                           <Button className="w-full" onClick={() => handleSave('experience', 'experiences', expForm, resetExpForm)} disabled={savingTarget === 'experience'} icon={Save}>{savingTarget === 'experience' ? '저장 중...' : '저장하기'}</Button>
-                        </div>
                      </div>
-
-                     {/* Desktop Fixed Save Button */}
-                     <div className="hidden lg:block pt-4 border-t border-gray-100 mt-auto">
+                     <div className="p-4 border-t border-gray-100 shrink-0 bg-white">
                         <Button className="w-full" onClick={() => handleSave('experience', 'experiences', expForm, resetExpForm)} disabled={savingTarget === 'experience'} icon={Save}>{savingTarget === 'experience' ? '저장 중...' : '저장하기'}</Button>
                      </div>
                   </div>
-
-                  {/* List Section */}
-                  <div className={`${mobileSubTab === 'form' ? 'hidden' : 'flex'} lg:flex flex-col h-auto lg:h-full lg:overflow-hidden order-2 lg:order-none`}>
+                  <div className={`${mobileSubTab === 'form' ? 'hidden' : 'flex'} md:flex flex-col h-auto md:h-full md:overflow-hidden order-2 md:order-none`}>
                      <h3 className="font-bold text-gray-700 mb-4 shrink-0">목록 ({experiences.length})</h3>
-                     <div className="grid gap-4 pb-24 lg:pb-10 pr-2 custom-scrollbar lg:overflow-y-auto h-auto lg:h-full">
+                     <div className="grid gap-4 pb-24 md:pb-10 pr-2 custom-scrollbar md:overflow-y-auto h-auto md:h-full">
                         {experiences.map(e => (
                            <Card key={e.id} title={e.title} onDelete={()=>handleDelete('experiences', e.id)} onEdit={()=>handleEdit('experiences', e, setExpForm)} 
                                  expandedContent={<div className="space-y-2 text-sm">{EXP_QUESTIONS.slice(1).map(q => e[q.id] && <div key={q.id}><strong className="text-xs text-gray-500">{q.label}</strong><p>{e[q.id]}</p></div>)}</div>}>
@@ -1170,48 +898,32 @@ ${expInfoStr}
           {/* Company Tab */}
           {activeTab === TABS.COMPANY && (
              <>
-                {/* Mobile Toggle Tabs */}
                 <div className="md:hidden flex mb-4 bg-gray-200 p-1 rounded-lg shrink-0">
-                   <button 
-                      className={`flex-1 py-2 text-sm font-bold rounded-md transition-all ${mobileSubTab === 'form' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-500'}`}
-                      onClick={() => setMobileSubTab('form')}
-                   >
-                      ✏️ 작성하기
-                   </button>
-                   <button 
-                      className={`flex-1 py-2 text-sm font-bold rounded-md transition-all ${mobileSubTab === 'list' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-500'}`}
-                      onClick={() => setMobileSubTab('list')}
-                   >
-                      📋 목록 ({companies.length})
-                   </button>
+                   <button className={`flex-1 py-2 text-sm font-bold rounded-md transition-all ${mobileSubTab === 'form' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-500'}`} onClick={() => setMobileSubTab('form')}>✏️ 작성하기</button>
+                   <button className={`flex-1 py-2 text-sm font-bold rounded-md transition-all ${mobileSubTab === 'list' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-500'}`} onClick={() => setMobileSubTab('list')}>📋 목록 ({companies.length})</button>
                 </div>
-
-                <div className="flex flex-col lg:grid lg:grid-cols-2 gap-6 h-auto lg:h-full">
-                   <div className={`${mobileSubTab === 'list' ? 'hidden' : 'flex'} lg:flex bg-white p-6 rounded-xl border border-gray-200 flex-col h-auto lg:h-full order-1 lg:order-none ${isFormHighlighted ? 'ring-4 ring-yellow-300 transition-all duration-500' : ''}`}>
-                      <div className="flex justify-between mb-4 border-b border-gray-100 pb-2">
+                <div className="flex flex-col md:grid md:grid-cols-2 gap-6 h-auto md:h-full">
+                   <div className={`${mobileSubTab === 'list' ? 'hidden' : 'flex'} md:flex bg-white rounded-xl border border-gray-200 flex-col h-auto md:h-full order-1 md:order-none ${isFormHighlighted ? 'ring-4 ring-yellow-300 transition-all duration-500' : ''}`}>
+                      <div className="flex justify-between p-6 border-b border-gray-100 shrink-0 bg-white items-center">
                          <h3 className="font-bold text-blue-800">{editMode.active && editMode.collection==='companies' ? '기업 수정' : '새 기업 등록'}</h3>
+                         <button onClick={() => setShowHelp(!showHelp)} className="text-gray-400 hover:text-blue-500"><HelpCircle size={20}/></button>
                          {editMode.active && editMode.collection==='companies' && <Button variant="ghost" onClick={() => cancelEdit(resetCompForm)}><XCircle size={14}/> 취소</Button>}
                       </div>
-
-                      <div className="flex-1 lg:overflow-y-auto lg:pr-2 custom-scrollbar space-y-4">
+                      <div className="flex-1 md:overflow-y-auto p-6 custom-scrollbar space-y-4">
                          <InputField label="기업명" value={compForm.name} onChange={v=>setCompForm(p=>({...p, name:v}))} isHighlighted={isFormHighlighted} />
                          <InputField label="직무" value={compForm.role} onChange={v=>setCompForm(p=>({...p, role:v}))} isHighlighted={isFormHighlighted} />
                          {COMP_FIELDS.slice(2).map(f => (
                             <InputField key={f.id} label={f.label} value={compForm[f.id]} onChange={v=>setCompForm(p=>({...p, [f.id]:v}))} multiline placeholder={f.placeholder} isHighlighted={isFormHighlighted} />
                          ))}
-                         <div className="lg:hidden pt-4 pb-10">
-                            <Button className="w-full" onClick={() => handleSave('company', 'companies', compForm, resetCompForm)} disabled={savingTarget === 'company'} icon={Save}>{savingTarget === 'company' ? '저장 중...' : '저장하기'}</Button>
-                         </div>
                       </div>
-
-                      <div className="hidden lg:block pt-4 border-t border-gray-100 mt-auto">
+                      <div className="p-4 border-t border-gray-100 shrink-0 bg-white">
                          <Button className="w-full" onClick={() => handleSave('company', 'companies', compForm, resetCompForm)} disabled={savingTarget === 'company'} icon={Save}>{savingTarget === 'company' ? '저장 중...' : '저장하기'}</Button>
                       </div>
                    </div>
 
-                   <div className={`${mobileSubTab === 'form' ? 'hidden' : 'flex'} lg:flex flex-col h-auto lg:h-full lg:overflow-hidden order-2 lg:order-none`}>
+                   <div className={`${mobileSubTab === 'form' ? 'hidden' : 'flex'} md:flex flex-col h-auto md:h-full md:overflow-hidden order-2 md:order-none`}>
                       <h3 className="font-bold text-gray-700 mb-4 shrink-0">목록 ({companies.length})</h3>
-                      <div className="grid gap-4 pb-24 lg:pb-10 pr-2 custom-scrollbar lg:overflow-y-auto h-auto lg:h-full">
+                      <div className="grid gap-4 pb-24 md:pb-10 pr-2 custom-scrollbar md:overflow-y-auto h-auto md:h-full">
                          {companies.map(c => (
                             <Card key={c.id} title={`${c.name} (${c.role})`} onDelete={()=>handleDelete('companies', c.id)} onEdit={()=>handleEdit('companies', c, setCompForm)}
                                   expandedContent={<div className="space-y-2 text-sm">{COMP_FIELDS.slice(2).map(f => c[f.id] && <div key={f.id}><strong className="text-xs text-gray-500">{f.label}</strong><p>{c[f.id]}</p></div>)}</div>}>
@@ -1229,24 +941,15 @@ ${expInfoStr}
 
           {/* Profile Tab */}
           {activeTab === TABS.PROFILE && (
-             <div className="max-w-3xl mx-auto h-full overflow-y-auto custom-scrollbar p-1 pb-32 lg:pb-0">
+             <div className="max-w-3xl mx-auto h-full overflow-y-auto custom-scrollbar p-1 pb-32 md:pb-0">
                 <div className={`bg-white p-8 rounded-xl border border-gray-200 mb-20 md:mb-0 ${isFormHighlighted ? 'ring-4 ring-yellow-300 transition-all duration-500' : ''}`}>
                    <h3 className="font-bold text-xl mb-6 text-blue-800 flex items-center gap-2"><User size={24}/> 나의 정보 관리 (자동 저장 아님)</h3>
                    <div className="space-y-8">
                       {PROFILE_FIELDS.map(f => (
-                         <MultiValueInput 
-                            key={f.id} 
-                            label={f.label} 
-                            items={profForm[f.id] || []} 
-                            onChange={newItems => setProfForm(prev => ({ ...prev, [f.id]: newItems }))}
-                            placeholder={`${f.label.split(' ').slice(1).join(' ')} 입력 후 Enter 또는 추가 버튼`}
-                            isHighlighted={isFormHighlighted}
-                         />
+                         <MultiValueInput key={f.id} label={f.label} items={profForm[f.id] || []} onChange={newItems => setProfForm(prev => ({ ...prev, [f.id]: newItems }))} placeholder={`${f.label.split(' ').slice(1).join(' ')} 입력 후 Enter 또는 추가 버튼`} isHighlighted={isFormHighlighted} />
                       ))}
-                      <div className="pt-4 border-t pb-20 md:pb-0">
-                        <Button className="w-full py-3" onClick={handleSaveProfile} disabled={savingTarget === 'profile'} icon={Save}>
-                           {savingTarget === 'profile' ? '저장 중...' : (profile ? '정보 업데이트' : '정보 저장')}
-                        </Button>
+                      <div className="pt-4 border-t">
+                        <Button className="w-full py-3" onClick={handleSaveProfile} disabled={savingTarget === 'profile'} icon={Save}>{savingTarget === 'profile' ? '저장 중...' : (profile ? '정보 업데이트' : '정보 저장')}</Button>
                         <p className="text-xs text-gray-400 text-center mt-2">* 작성 후 반드시 저장 버튼을 눌러주세요.</p>
                       </div>
                    </div>
