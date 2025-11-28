@@ -94,7 +94,8 @@ const PROFILE_FIELDS = [
   { id: 'goals', label: '④ 장래 목표' }
 ];
 
-const GEMINI_HELP_TEXT = `해당 내용을 복사해서 제미나이에게 물어보면 더 빠르게 입력할 수 있어요.
+// Gemini Help Texts
+const GEMINI_COMPANY_HELP_TEXT = `해당 내용을 복사해서 제미나이에게 물어보면 더 빠르게 입력할 수 있어요.
 👇 (복사 후 수정해서 사용하세요)
 
 현재 [기업명] 기업의 [직무명] 직무에 대해 아래 정보를 찾아줘.
@@ -107,6 +108,23 @@ const GEMINI_HELP_TEXT = `해당 내용을 복사해서 제미나이에게 물�
 6. 핵심 직무 역할 1
 7. 핵심 직무 역할 2
 8. 경쟁/트렌드 - 이 '시장'의 가장 큰 화두는 무엇인가?`;
+
+const GEMINI_EXPERIENCE_HELP_TEXT = `해당 내용을 복사해서 제미나이에게 물어보면 더 빠르게 입력할수 있어요.
+
+"아래는 내가 작성한 내 경험 정보에 대해서 적었어. 해당 경험정보를 통해 아래의 질문에 답변을 작성해줘."
+
+1. 경험 제목 (예: 종합설계 프로젝트)
+2. 계기나 목표
+3. 마주한 어려움/문제
+4. 해결을 위한 구체적 행동
+5. 결과 확인 방식
+6. 변화나 성과
+7. 배운 점
+8. 직무 연관성
+9. 일하는 방식/철학 연관성
+10. 향후 활용 방안
+
+내경험 작성(하단에 자신의 경험에 대해 적으세요. 이전에 적은 자기소개서나 경력을 자유롭게 작성했던 과거자료를 작성해주시면 됩니다.)`;
 
 // --- Components ---
 
@@ -250,7 +268,6 @@ const Card = ({ title, children, onDelete, onEdit, expandedContent }) => {
 
 // --- Auth Component ---
 const AuthScreen = () => {
-  // (Auth Logic same as before - omitted for brevity, included in full code below)
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -325,7 +342,7 @@ export default function App() {
   const [statusMsg, setStatusMsg] = useState(null); 
   const [editMode, setEditMode] = useState({ active: false, id: null, collection: null });
   const [isFormHighlighted, setIsFormHighlighted] = useState(false);
-  const [showHelp, setShowHelp] = useState(false); // Help popup state
+  const [showHelp, setShowHelp] = useState(null); // 'company' | 'experience' | null
 
   const mainContentRef = useRef(null);
 
@@ -447,10 +464,10 @@ export default function App() {
     setTimeout(() => setStatusMsg(null), 5000);
   };
 
-  const copyGeminiHelp = () => {
-    navigator.clipboard.writeText(GEMINI_HELP_TEXT).then(() => {
+  const copyHelpText = (text) => {
+    navigator.clipboard.writeText(text).then(() => {
         alert("제미나이 질문 양식이 복사되었습니다!");
-        setShowHelp(false);
+        setShowHelp(null);
     });
   };
 
@@ -627,7 +644,7 @@ ${expInfoStr}
       { id: TABS.PROFILE, icon: User, label: '정보' },
     ];
     return (
-      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 flex justify-around items-center h-16 z-[60] pb-safe">
+      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 flex justify-around items-center h-16 z-[60] pb-safe md:hidden">
         {tabs.map((tab) => (
           <button key={tab.id} onClick={() => { setActiveTab(tab.id); setEditMode({ active: false, id: null, collection: null }); }} className={`flex flex-col items-center justify-center w-full h-full ${activeTab === tab.id ? 'text-blue-600' : 'text-gray-400'}`}>
             <tab.icon size={24} className={activeTab === tab.id ? 'fill-blue-100' : ''} />
@@ -680,18 +697,18 @@ ${expInfoStr}
       
       {/* Help Popup */}
       {showHelp && (
-        <div className="fixed inset-0 bg-black/50 z-[70] flex items-center justify-center p-4" onClick={() => setShowHelp(false)}>
+        <div className="fixed inset-0 bg-black/50 z-[70] flex items-center justify-center p-4" onClick={() => setShowHelp(null)}>
            <div className="bg-white rounded-xl shadow-2xl max-w-md w-full overflow-hidden animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
               <div className="p-4 border-b border-gray-100 flex justify-between items-center bg-blue-50">
                  <h3 className="font-bold text-blue-800 flex items-center gap-2"><Sparkles size={18}/> 제미나이 질문 도우미</h3>
-                 <button onClick={() => setShowHelp(false)} className="text-gray-400 hover:text-gray-600"><XCircle size={20}/></button>
+                 <button onClick={() => setShowHelp(null)} className="text-gray-400 hover:text-gray-600"><XCircle size={20}/></button>
               </div>
               <div className="p-6 bg-gray-50">
-                 <p className="text-sm text-gray-600 mb-4">아래 내용을 복사해서 제미나이(또는 ChatGPT)에게 물어보면 <br/>기업 분석 정보를 빠르게 채울 수 있습니다!</p>
-                 <div className="bg-white border border-gray-200 rounded-lg p-3 text-xs font-mono text-gray-700 whitespace-pre-wrap mb-4 shadow-inner">
-                    {GEMINI_HELP_TEXT}
+                 <p className="text-sm text-gray-600 mb-4">아래 내용을 복사해서 제미나이(또는 ChatGPT)에게 물어보면 <br/>{showHelp === 'experience' ? '경험을 체계적으로 정리할 수' : '기업 분석 정보를 빠르게 채울 수'} 있습니다!</p>
+                 <div className="bg-white border border-gray-200 rounded-lg p-3 text-xs font-mono text-gray-700 whitespace-pre-wrap mb-4 shadow-inner max-h-64 overflow-y-auto">
+                    {showHelp === 'experience' ? GEMINI_EXPERIENCE_HELP_TEXT : GEMINI_COMPANY_HELP_TEXT}
                  </div>
-                 <Button className="w-full" onClick={copyGeminiHelp} icon={Copy}>양식 복사하기</Button>
+                 <Button className="w-full" onClick={() => copyHelpText(showHelp === 'experience' ? GEMINI_EXPERIENCE_HELP_TEXT : GEMINI_COMPANY_HELP_TEXT)} icon={Copy}>양식 복사하기</Button>
               </div>
            </div>
         </div>
@@ -700,6 +717,7 @@ ${expInfoStr}
       {/* Tutorial Overlay */}
       {tutorialStep > 0 && (
         <div className="fixed inset-0 bg-black/70 z-50 cursor-pointer animate-in fade-in duration-300" onClick={nextTutorial}>
+          {/* Tutorial Steps - Unchanged */}
           {tutorialStep === 1 && (
             <div className="hidden md:block absolute left-[280px] top-[40%] text-white animate-bounce-x">
               <div className="flex items-center gap-4"><ArrowLeft size={48} className="text-yellow-400" /><div><h2 className="text-3xl font-bold text-yellow-400 mb-2">1단계: 재료 준비</h2><p className="text-xl font-medium">먼저 이 3개 탭에서 <br/>자신의 경험과 기업 정보를 작성해주세요.</p></div></div>
@@ -864,14 +882,15 @@ ${expInfoStr}
                   <button className={`flex-1 py-2 text-sm font-bold rounded-md transition-all ${mobileSubTab === 'form' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-500'}`} onClick={() => setMobileSubTab('form')}>✏️ 작성하기</button>
                   <button className={`flex-1 py-2 text-sm font-bold rounded-md transition-all ${mobileSubTab === 'list' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-500'}`} onClick={() => setMobileSubTab('list')}>📋 목록 ({experiences.length})</button>
                </div>
-               <div className="flex flex-col md:grid md:grid-cols-2 gap-6 h-auto md:h-full">
-                  {/* PC: h-full & overflow-hidden to allow inner scroll. Mobile: h-auto & no overflow hidden */}
-                  <div className={`${mobileSubTab === 'list' ? 'hidden' : 'flex'} md:flex bg-white rounded-xl border border-gray-200 flex-col h-auto md:h-full order-1 md:order-none ${isFormHighlighted ? 'ring-4 ring-yellow-300 transition-all duration-500' : ''}`}>
-                     <div className="flex justify-between p-6 border-b border-gray-100 shrink-0 bg-white">
+               <div className="flex flex-col lg:grid lg:grid-cols-2 gap-6 h-full">
+                  {/* Form Section */}
+                  <div className={`${mobileSubTab === 'list' ? 'hidden' : 'flex'} lg:flex bg-white rounded-xl border border-gray-200 flex-col h-auto lg:h-full order-1 lg:order-none ${isFormHighlighted ? 'ring-4 ring-yellow-300 transition-all duration-500' : ''}`}>
+                     <div className="flex justify-between p-6 border-b border-gray-100 shrink-0 bg-white items-center">
                         <h3 className="font-bold text-blue-800">{editMode.active && editMode.collection==='experiences' ? '경험 수정' : '새 경험 등록'}</h3>
+                        <button onClick={() => setShowHelp('experience')} className="text-gray-400 hover:text-blue-500"><HelpCircle size={20}/></button>
                         {editMode.active && editMode.collection==='experiences' && <Button variant="ghost" onClick={() => cancelEdit(resetExpForm)}><XCircle size={14}/> 취소</Button>}
                      </div>
-                     <div className="flex-1 md:overflow-y-auto p-6 custom-scrollbar space-y-4">
+                     <div className="flex-1 lg:overflow-y-auto p-6 custom-scrollbar space-y-4">
                         {EXP_QUESTIONS.map(q => (
                            <InputField key={q.id} label={q.label} value={expForm[q.id]} onChange={v => setExpForm(p => ({...p, [q.id]: v}))} multiline={q.id!=='title'} isHighlighted={isFormHighlighted} />
                         ))}
@@ -880,9 +899,11 @@ ${expInfoStr}
                         <Button className="w-full" onClick={() => handleSave('experience', 'experiences', expForm, resetExpForm)} disabled={savingTarget === 'experience'} icon={Save}>{savingTarget === 'experience' ? '저장 중...' : '저장하기'}</Button>
                      </div>
                   </div>
-                  <div className={`${mobileSubTab === 'form' ? 'hidden' : 'flex'} md:flex flex-col h-auto md:h-full md:overflow-hidden order-2 md:order-none`}>
+
+                  {/* List Section */}
+                  <div className={`${mobileSubTab === 'form' ? 'hidden' : 'flex'} lg:flex flex-col h-auto lg:h-full lg:overflow-hidden order-2 lg:order-none`}>
                      <h3 className="font-bold text-gray-700 mb-4 shrink-0">목록 ({experiences.length})</h3>
-                     <div className="grid gap-4 pb-24 md:pb-10 pr-2 custom-scrollbar md:overflow-y-auto h-auto md:h-full">
+                     <div className="grid gap-4 pb-24 lg:pb-10 pr-2 custom-scrollbar lg:overflow-y-auto h-auto lg:h-full">
                         {experiences.map(e => (
                            <Card key={e.id} title={e.title} onDelete={()=>handleDelete('experiences', e.id)} onEdit={()=>handleEdit('experiences', e, setExpForm)} 
                                  expandedContent={<div className="space-y-2 text-sm">{EXP_QUESTIONS.slice(1).map(q => e[q.id] && <div key={q.id}><strong className="text-xs text-gray-500">{q.label}</strong><p>{e[q.id]}</p></div>)}</div>}>
@@ -902,14 +923,14 @@ ${expInfoStr}
                    <button className={`flex-1 py-2 text-sm font-bold rounded-md transition-all ${mobileSubTab === 'form' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-500'}`} onClick={() => setMobileSubTab('form')}>✏️ 작성하기</button>
                    <button className={`flex-1 py-2 text-sm font-bold rounded-md transition-all ${mobileSubTab === 'list' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-500'}`} onClick={() => setMobileSubTab('list')}>📋 목록 ({companies.length})</button>
                 </div>
-                <div className="flex flex-col md:grid md:grid-cols-2 gap-6 h-auto md:h-full">
-                   <div className={`${mobileSubTab === 'list' ? 'hidden' : 'flex'} md:flex bg-white rounded-xl border border-gray-200 flex-col h-auto md:h-full order-1 md:order-none ${isFormHighlighted ? 'ring-4 ring-yellow-300 transition-all duration-500' : ''}`}>
+                <div className="flex flex-col lg:grid lg:grid-cols-2 gap-6 h-full">
+                   <div className={`${mobileSubTab === 'list' ? 'hidden' : 'flex'} lg:flex bg-white rounded-xl border border-gray-200 flex-col h-auto lg:h-full order-1 lg:order-none ${isFormHighlighted ? 'ring-4 ring-yellow-300 transition-all duration-500' : ''}`}>
                       <div className="flex justify-between p-6 border-b border-gray-100 shrink-0 bg-white items-center">
                          <h3 className="font-bold text-blue-800">{editMode.active && editMode.collection==='companies' ? '기업 수정' : '새 기업 등록'}</h3>
-                         <button onClick={() => setShowHelp(!showHelp)} className="text-gray-400 hover:text-blue-500"><HelpCircle size={20}/></button>
+                         <button onClick={() => setShowHelp('company')} className="text-gray-400 hover:text-blue-500"><HelpCircle size={20}/></button>
                          {editMode.active && editMode.collection==='companies' && <Button variant="ghost" onClick={() => cancelEdit(resetCompForm)}><XCircle size={14}/> 취소</Button>}
                       </div>
-                      <div className="flex-1 md:overflow-y-auto p-6 custom-scrollbar space-y-4">
+                      <div className="flex-1 lg:overflow-y-auto p-6 custom-scrollbar space-y-4">
                          <InputField label="기업명" value={compForm.name} onChange={v=>setCompForm(p=>({...p, name:v}))} isHighlighted={isFormHighlighted} />
                          <InputField label="직무" value={compForm.role} onChange={v=>setCompForm(p=>({...p, role:v}))} isHighlighted={isFormHighlighted} />
                          {COMP_FIELDS.slice(2).map(f => (
@@ -921,9 +942,9 @@ ${expInfoStr}
                       </div>
                    </div>
 
-                   <div className={`${mobileSubTab === 'form' ? 'hidden' : 'flex'} md:flex flex-col h-auto md:h-full md:overflow-hidden order-2 md:order-none`}>
+                   <div className={`${mobileSubTab === 'form' ? 'hidden' : 'flex'} lg:flex flex-col h-auto lg:h-full lg:overflow-hidden order-2 lg:order-none`}>
                       <h3 className="font-bold text-gray-700 mb-4 shrink-0">목록 ({companies.length})</h3>
-                      <div className="grid gap-4 pb-24 md:pb-10 pr-2 custom-scrollbar md:overflow-y-auto h-auto md:h-full">
+                      <div className="grid gap-4 pb-24 lg:pb-10 pr-2 custom-scrollbar lg:overflow-y-auto h-auto lg:h-full">
                          {companies.map(c => (
                             <Card key={c.id} title={`${c.name} (${c.role})`} onDelete={()=>handleDelete('companies', c.id)} onEdit={()=>handleEdit('companies', c, setCompForm)}
                                   expandedContent={<div className="space-y-2 text-sm">{COMP_FIELDS.slice(2).map(f => c[f.id] && <div key={f.id}><strong className="text-xs text-gray-500">{f.label}</strong><p>{c[f.id]}</p></div>)}</div>}>
@@ -941,7 +962,7 @@ ${expInfoStr}
 
           {/* Profile Tab */}
           {activeTab === TABS.PROFILE && (
-             <div className="max-w-3xl mx-auto h-full overflow-y-auto custom-scrollbar p-1 pb-32 md:pb-0">
+             <div className="max-w-3xl mx-auto h-full overflow-y-auto custom-scrollbar p-1 pb-32 lg:pb-0">
                 <div className={`bg-white p-8 rounded-xl border border-gray-200 mb-20 md:mb-0 ${isFormHighlighted ? 'ring-4 ring-yellow-300 transition-all duration-500' : ''}`}>
                    <h3 className="font-bold text-xl mb-6 text-blue-800 flex items-center gap-2"><User size={24}/> 나의 정보 관리 (자동 저장 아님)</h3>
                    <div className="space-y-8">
