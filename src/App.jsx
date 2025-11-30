@@ -13,7 +13,7 @@ import {
 } from 'firebase/firestore';
 import { 
   Save, Trash2, Copy, FileText, Briefcase, User, Layout, 
-  Database, Sparkles, Edit2, ChevronDown, CheckSquare, Square, XCircle, LogOut, Lock, Mail, AlertCircle, CheckCircle2, ArrowLeft, Plus, ArrowDown, MousePointerClick, GripHorizontal, Info, HelpCircle, X, Maximize2, Minimize2
+  Database, Sparkles, Edit2, ChevronDown, ChevronUp, CheckSquare, Square, XCircle, LogOut, Lock, Mail, AlertCircle, CheckCircle2, ArrowLeft, Plus, ArrowDown, MousePointerClick, GripHorizontal, Info, HelpCircle, X, Maximize2, Minimize2
 } from 'lucide-react';
 
 // --- [중요] Firebase Configuration ---
@@ -93,6 +93,7 @@ const PROFILE_FIELDS = [
   { id: 'goals', label: '④ 장래 목표' }
 ];
 
+// Gemini Help Texts
 const GEMINI_COMPANY_HELP_TEXT = `해당 내용을 복사해서 제미나이에게 물어보면 더 빠르게 입력할 수 있어요.
 👇 (복사 후 수정해서 사용하세요)
 
@@ -371,7 +372,6 @@ export default function App() {
   const [isFormHighlighted, setIsFormHighlighted] = useState(false);
   const [showHelp, setShowHelp] = useState(null); 
   
-  // [New] Full Screen State for Prompt
   const [isMaximized, setIsMaximized] = useState(false);
 
   const mainContentRef = useRef(null);
@@ -404,7 +404,6 @@ export default function App() {
 
   // --- Resize Handlers ---
   const startResize = (e) => {
-    // Disable resizing if maximized
     if (isMaximized) return;
     isResizing.current = true;
     const clientY = e.touches ? e.touches[0].clientY : e.clientY;
@@ -971,7 +970,18 @@ ${expInfoStr}
                      <div className="grid gap-4 pb-24 lg:pb-10 pr-2 custom-scrollbar lg:overflow-y-auto h-auto lg:h-full">
                         {experiences.map(e => (
                            <Card key={e.id} title={e.title} onDelete={()=>handleDelete('experiences', e.id)} onEdit={()=>handleEdit('experiences', e, setExpForm)} 
-                                 expandedContent={<div className="space-y-2 text-sm">{EXP_QUESTIONS.slice(1).map(q => e[q.id] && <div key={q.id}><strong className="text-xs text-gray-500">{q.label}</strong><p>{e[q.id]}</p></div>)}</div>}>
+                                 expandedContent={<div className="space-y-3 text-sm">
+                                  {EXP_QUESTIONS.slice(1).map(q => 
+                                    e[q.id] ? (
+                                      <div key={q.id}>
+                                        <strong className="block text-xs text-blue-600 mb-1">{q.label}</strong>
+                                        <p className="whitespace-pre-wrap text-gray-700 leading-relaxed">
+                                           {typeof e[q.id] === 'object' ? JSON.stringify(e[q.id]) : String(e[q.id])}
+                                        </p>
+                                      </div>
+                                    ) : null
+                                  )}
+                                </div>}>
                               <p className="line-clamp-2 mt-2 text-gray-600">{e.result}</p>
                            </Card>
                         ))}
@@ -1012,7 +1022,18 @@ ${expInfoStr}
                       <div className="grid gap-4 pb-24 lg:pb-10 pr-2 custom-scrollbar lg:overflow-y-auto h-auto lg:h-full">
                          {companies.map(c => (
                             <Card key={c.id} title={`${c.name} (${c.role})`} onDelete={()=>handleDelete('companies', c.id)} onEdit={()=>handleEdit('companies', c, setCompForm)}
-                                  expandedContent={<div className="space-y-2 text-sm">{COMP_FIELDS.slice(2).map(f => c[f.id] && <div key={f.id}><strong className="text-xs text-gray-500">{f.label}</strong><p>{c[f.id]}</p></div>)}</div>}>
+                                  expandedContent={<div className="space-y-3 text-sm">
+                                  {COMP_FIELDS.slice(2).map(f => 
+                                    c[f.id] ? (
+                                      <div key={f.id}>
+                                        <strong className="block text-xs text-blue-600 mb-1">{f.label}</strong>
+                                        <p className="whitespace-pre-wrap text-gray-700 leading-relaxed">
+                                           {typeof c[f.id] === 'object' ? JSON.stringify(c[f.id]) : String(c[f.id])}
+                                        </p>
+                                      </div>
+                                    ) : null
+                                  )}
+                                </div>}>
                                <div className="mt-2 text-xs text-gray-500 space-y-1">
                                   {c.vision && <p className="line-clamp-1">비전: {c.vision}</p>}
                                   {c.jd_skills && <p className="line-clamp-1">역량: {c.jd_skills}</p>}
@@ -1034,7 +1055,7 @@ ${expInfoStr}
                       {PROFILE_FIELDS.map(f => (
                          <MultiValueInput key={f.id} label={f.label} items={profForm[f.id] || []} onChange={newItems => setProfForm(prev => ({ ...prev, [f.id]: newItems }))} placeholder={`${f.label.split(' ').slice(1).join(' ')} 입력 후 Enter 또는 추가 버튼`} isHighlighted={isFormHighlighted} />
                       ))}
-                      <div className="pt-4 border-t">
+                      <div className="pt-4 border-t pb-20 md:pb-0">
                         <Button className="w-full py-3" onClick={handleSaveProfile} disabled={savingTarget === 'profile'} icon={Save}>{savingTarget === 'profile' ? '저장 중...' : (profile ? '정보 업데이트' : '정보 저장')}</Button>
                         <p className="text-xs text-gray-400 text-center mt-2">* 작성 후 반드시 저장 버튼을 눌러주세요.</p>
                       </div>
