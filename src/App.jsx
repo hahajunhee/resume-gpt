@@ -6,11 +6,10 @@ import {
   createUserWithEmailAndPassword, 
   sendPasswordResetEmail,
   signOut, 
-  onAuthStateChanged,
-  signInAnonymously
+  onAuthStateChanged
 } from 'firebase/auth';
 import { 
-  getFirestore, collection, doc, addDoc, updateDoc, deleteDoc, onSnapshot, query, orderBy, serverTimestamp, limit as firestoreLimit, writeBatch, getDocs
+  getFirestore, collection, doc, addDoc, updateDoc, deleteDoc, onSnapshot, query, orderBy, serverTimestamp, limit as firestoreLimit, writeBatch
 } from 'firebase/firestore';
 import { 
   Save, Trash2, Copy, FileText, Briefcase, User, Layout, 
@@ -125,6 +124,73 @@ const GEMINI_EXPERIENCE_HELP_TEXT = `해당 내용을 복사해서 제미나이�
 10. 향후 활용 방안
 
 내경험 작성(하단에 자신의 경험에 대해 적으세요. 이전에 적은 자기소개서나 경력을 자유롭게 작성했던 과거자료를 작성해주시면 됩니다.)`;
+
+// --- Sample Data for Guest Mode ---
+const SAMPLE_EXPERIENCES = [
+  {
+    id: 'sample-exp-1',
+    title: '스타트업 인턴 - 데이터 분석 프로젝트',
+    motivation: '실무 경험을 쌓고 데이터 기반 의사결정 프로세스를 배우고 싶었습니다.',
+    obstacle: '비정형 데이터가 많아 일관된 분석 기준을 세우기 어려웠고, 팀원들과의 협업 경험이 부족했습니다.',
+    action: 'Python과 SQL을 활용해 데이터를 정제하고, 주간 회의를 통해 팀원들과 지속적으로 소통하며 분석 방향을 조율했습니다.',
+    verification: '분석 결과를 시각화하여 경영진에게 발표하고, 실제 마케팅 전략에 반영되는 과정을 확인했습니다.',
+    result: '고객 이탈률 15% 감소에 기여했으며, 데이터 기반 의사결정 문화 정착에 도움을 주었습니다.',
+    learning: '데이터만큼 중요한 것은 이해관계자와의 소통임을 배웠고, 작은 인사이트도 비즈니스에 큰 영향을 줄 수 있다는 것을 경험했습니다.',
+    similarity: '데이터 분석 역량과 커뮤니케이션 능력은 지원 직무의 핵심 요구사항과 직결됩니다.',
+    philosophy: '문제를 데이터로 정의하고, 협업을 통해 해결책을 찾는 방식이 저의 일하는 철학입니다.',
+    future: '더 복잡한 비즈니스 문제를 데이터로 해결하고, 팀 전체의 데이터 리터러시 향상에 기여하고 싶습니다.'
+  },
+  {
+    id: 'sample-exp-2',
+    title: '대학 프로젝트 - AI 챗봇 개발',
+    motivation: '사용자 경험을 개선하는 기술을 직접 만들어보고 싶었습니다.',
+    obstacle: '자연어 처리 기술에 대한 이해가 부족했고, 한정된 리소스로 프로젝트를 완성해야 했습니다.',
+    action: '온라인 강의와 논문을 통해 학습하고, 오픈소스 라이브러리를 활용하여 3개월간 개발에 집중했습니다.',
+    verification: '실제 사용자 20명을 대상으로 테스트를 진행하고 피드백을 수집했습니다.',
+    result: '사용자 만족도 85%를 달성했고, 학과 우수 프로젝트로 선정되었습니다.',
+    learning: '완벽한 기술보다 사용자 니즈에 맞는 솔루션이 더 중요하다는 것을 배웠습니다.',
+    similarity: '빠르게 학습하고 실행하는 능력은 빠르게 변화하는 업무 환경에 필수적입니다.',
+    philosophy: '사용자 관점에서 생각하고, 지속적으로 개선하는 자세를 중요하게 생각합니다.',
+    future: '실무에서 더 큰 규모의 프로젝트를 리드하고, 팀원들과 함께 성장하고 싶습니다.'
+  }
+];
+
+const SAMPLE_COMPANIES = [
+  {
+    id: 'sample-comp-1',
+    name: '삼성전자',
+    role: 'SW개발',
+    vision: '반도체와 AI 기술을 결합한 차세대 디바이스 선도 기업으로 성장',
+    business: '메모리 반도체, 시스템 반도체, 스마트폰, 가전제품. 최근 AI 반도체와 로봇 사업에 집중 투자',
+    talent: '도전적 실행력, 창의적 사고',
+    jd_rnr: '1. 모바일/임베디드 소프트웨어 개발 2. 시스템 최적화 및 성능 개선 3. 신기술 연구 및 적용',
+    jd_skills: 'Hard: C/C++, Python, Linux, 알고리즘 / Soft: 문제해결력, 커뮤니케이션, 빠른 학습능력',
+    core_role_1: '제품 소프트웨어 안정성 및 성능 최적화',
+    core_role_2: 'AI 및 차세대 기술 연구개발',
+    market_issue: 'AI 반도체 경쟁 심화, 글로벌 공급망 재편, ESG 경영 강화'
+  },
+  {
+    id: 'sample-comp-2',
+    name: '카카오',
+    role: '서비스기획',
+    vision: '기술과 사람을 연결하는 글로벌 플랫폼 기업',
+    business: '메신저, 포털, 콘텐츠, 모빌리티, 커머스. 최근 AI 서비스와 글로벌 진출에 집중',
+    talent: '사용자 중심 사고, 혁신과 도전',
+    jd_rnr: '1. 서비스 개선 및 신규 기능 기획 2. 데이터 분석 기반 의사결정 3. 타 부서와의 협업 및 조율',
+    jd_skills: 'Hard: 데이터 분석, UX/UI 이해, 프로젝트 관리 / Soft: 커뮤니케이션, 논리적 사고, 사용자 공감 능력',
+    core_role_1: '사용자 니즈 분석 및 서비스 기획',
+    core_role_2: '데이터 기반 성과 측정 및 개선',
+    market_issue: 'AI 기술 통합, 개인정보 보호 강화, 플랫폼 규제 대응'
+  }
+];
+
+const SAMPLE_PROFILE = {
+  id: 'sample-profile-1',
+  strength: ['빠른 학습능력', '데이터 분석', '커뮤니케이션'],
+  keywords: ['문제해결', '협업', '성장마인드'],
+  values: ['사용자 중심 사고', '지속적 학습', '투명한 소통'],
+  goals: ['전문가로 성장', '팀에 기여', '사회적 가치 창출']
+};
 
 // --- Components ---
 
@@ -396,8 +462,6 @@ const AuthScreen = ({ onGuestMode }) => {
 export default function App() {
   const [user, setUser] = useState(null);
   const [isGuestMode, setIsGuestMode] = useState(false);
-  const [guestUserId, setGuestUserId] = useState(null);
-  const [isGuestAuth, setIsGuestAuth] = useState(false);
   const [activeTab, setActiveTab] = useState(TABS.GENERATOR);
   const [mobileSubTab, setMobileSubTab] = useState('form');
   const [tutorialStep, setTutorialStep] = useState(0);
@@ -469,67 +533,15 @@ export default function App() {
     window.removeEventListener('touchend', stopResize);
   };
 
-  // --- Find First User for Guest Mode ---
-  const findFirstUserId = async () => {
-    if (!db) return null;
-    try {
-      const usersRef = collection(db, 'artifacts', appId, 'users');
-      const snapshot = await getDocs(usersRef);
-      if (snapshot.empty) return null;
-      
-      // Find user with earliest experience or company creation
-      let firstUserId = null;
-      let earliestTime = null;
-      
-      for (const userDoc of snapshot.docs) {
-        const userId = userDoc.id;
-        const expRef = collection(db, 'artifacts', appId, 'users', userId, 'experiences');
-        const compRef = collection(db, 'artifacts', appId, 'users', userId, 'companies');
-        
-        const [expSnapshot, compSnapshot] = await Promise.all([
-          getDocs(query(expRef, orderBy('createdAt', 'asc'), firestoreLimit(1))),
-          getDocs(query(compRef, orderBy('createdAt', 'asc'), firestoreLimit(1)))
-        ]);
-        
-        const expTime = expSnapshot.docs[0]?.data()?.createdAt?.toMillis();
-        const compTime = compSnapshot.docs[0]?.data()?.createdAt?.toMillis();
-        
-        const minTime = expTime && compTime 
-          ? Math.min(expTime, compTime)
-          : expTime || compTime;
-        
-        if (minTime && (!earliestTime || minTime < earliestTime)) {
-          earliestTime = minTime;
-          firstUserId = userId;
-        }
-      }
-      
-      // If no data found, use first user in collection
-      return firstUserId || snapshot.docs[0].id;
-    } catch (error) {
-      console.error("Error finding first user:", error);
-      return null;
-    }
-  };
-
   // --- Guest Mode Handler ---
-  const handleGuestMode = async () => {
-    const firstUserId = await findFirstUserId();
-    if (!firstUserId) {
-      alert('샘플 데이터를 찾을 수 없습니다. 먼저 계정을 생성해주세요.');
-      return;
-    }
-    setGuestUserId(firstUserId);
+  const handleGuestMode = () => {
+    // Load sample data directly
+    setExperiences(SAMPLE_EXPERIENCES);
+    setCompanies(SAMPLE_COMPANIES);
+    setProfile(SAMPLE_PROFILE);
+    setProfForm(SAMPLE_PROFILE);
+    
     setIsGuestMode(true);
-    setIsGuestAuth(true);
-    try {
-      if (auth && !auth.currentUser) {
-        await signInAnonymously(auth);
-      }
-    } catch (error) {
-      console.error("Anonymous signin failed:", error);
-      alert('게스트 모드 로그인에 실패했습니다. 잠시 후 다시 시도해주세요.');
-    }
     setTutorialStep(1);
   };
 
@@ -538,39 +550,35 @@ export default function App() {
     if (!auth) return;
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser);
-      if (currentUser) {
-        if (!isGuestAuth) {
-          setIsGuestMode(false);
-          setGuestUserId(null);
-        }
+      if (currentUser && !isGuestMode) {
         setTutorialStep(1);
       }
     });
     return () => unsubscribe();
-  }, [isGuestAuth]);
+  }, [isGuestMode]);
 
   useEffect(() => {
     setMobileSubTab('form');
   }, [activeTab]);
 
   useEffect(() => {
-    if (!db) return;
+    // Guest mode uses sample data, no Firebase subscription needed
+    if (isGuestMode) return;
     
-    const targetUserId = isGuestMode ? guestUserId : (user?.uid);
-    if (!targetUserId) return;
+    if (!db || !user) return;
     
     const subExp = onSnapshot(
-      query(collection(db, 'artifacts', appId, 'users', targetUserId, 'experiences'), orderBy('createdAt', 'desc')),
+      query(collection(db, 'artifacts', appId, 'users', user.uid, 'experiences'), orderBy('createdAt', 'desc')),
       (snapshot) => setExperiences(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })))
     );
 
     const subComp = onSnapshot(
-      query(collection(db, 'artifacts', appId, 'users', targetUserId, 'companies'), orderBy('createdAt', 'desc')),
+      query(collection(db, 'artifacts', appId, 'users', user.uid, 'companies'), orderBy('createdAt', 'desc')),
       (snapshot) => setCompanies(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })))
     );
 
     const subProf = onSnapshot(
-      query(collection(db, 'artifacts', appId, 'users', targetUserId, 'profiles'), firestoreLimit(1)),
+      query(collection(db, 'artifacts', appId, 'users', user.uid, 'profiles'), firestoreLimit(1)),
       (snapshot) => {
          if (snapshot.empty) {
            // Init empty profile logic could be here if needed
@@ -590,7 +598,7 @@ export default function App() {
     );
 
     return () => { subExp(); subComp(); subProf(); };
-  }, [user, isGuestMode, guestUserId, activeTab]); 
+  }, [user, isGuestMode, activeTab]); 
 
   // --- Helpers ---
   const nextTutorial = () => {
@@ -665,10 +673,10 @@ export default function App() {
   const handleLogout = async () => {
     if (isGuestMode) {
       setIsGuestMode(false);
-      setGuestUserId(null);
-      setIsGuestAuth(false);
-      try { await signOut(auth); } catch (e) { /* noop */ }
-      setUser(null);
+      setExperiences([]);
+      setCompanies([]);
+      setProfile(null);
+      setProfForm({ strength: [], keywords: [], values: [], goals: [] });
       return;
     }
     if(confirm('로그아웃 하시겠습니까?')) await signOut(auth);
