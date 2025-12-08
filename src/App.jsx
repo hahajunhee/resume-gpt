@@ -9,7 +9,7 @@ import {
   onAuthStateChanged 
 } from 'firebase/auth';
 import { 
-  getFirestore, collection, doc, addDoc, updateDoc, deleteDoc, onSnapshot, query, orderBy, serverTimestamp, limit as firestoreLimit, writeBatch 
+  getFirestore, collection, doc, addDoc, updateDoc, deleteDoc, onSnapshot, query, orderBy, serverTimestamp, limit as firestoreLimit, writeBatch, getDocs
 } from 'firebase/firestore';
 import { 
   Save, Trash2, Copy, FileText, Briefcase, User, Layout, 
@@ -143,42 +143,45 @@ const Button = ({ children, onClick, variant = 'primary', className = '', icon: 
   );
 };
 
-const InputField = ({ label, value, onChange, placeholder, multiline = false, isHighlighted }) => (
+const InputField = ({ label, value, onChange, placeholder, multiline = false, isHighlighted, disabled = false }) => (
   <div className="mb-4 min-h-0">
     <label className="block text-sm font-semibold text-gray-700 mb-1">{label}</label>
     {multiline ? (
       <textarea
         className={`w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 min-h-[100px] transition-all duration-300 ${
             isHighlighted ? 'border-yellow-400 bg-yellow-50 ring-2 ring-yellow-200' : 'border-gray-300'
-        }`}
+        } ${disabled ? 'bg-gray-100 cursor-not-allowed opacity-60' : ''}`}
         value={value || ''}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
+        disabled={disabled}
       />
     ) : (
       <input
         type="text"
         className={`w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-300 ${
             isHighlighted ? 'border-yellow-400 bg-yellow-50 ring-2 ring-yellow-200' : 'border-gray-300'
-        }`}
+        } ${disabled ? 'bg-gray-100 cursor-not-allowed opacity-60' : ''}`}
         value={value || ''}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
+        disabled={disabled}
       />
     )}
   </div>
 );
 
-const MultiValueInput = ({ label, items = [], onChange, placeholder, isHighlighted }) => {
+const MultiValueInput = ({ label, items = [], onChange, placeholder, isHighlighted, disabled = false }) => {
   const [inputValue, setInputValue] = useState('');
 
   const handleAdd = () => {
-    if (!inputValue.trim()) return;
+    if (disabled || !inputValue.trim()) return;
     onChange([...items, inputValue.trim()]);
     setInputValue('');
   };
 
   const handleKeyDown = (e) => {
+    if (disabled) return;
     if (e.key === 'Enter') {
       e.preventDefault();
       handleAdd();
@@ -186,6 +189,7 @@ const MultiValueInput = ({ label, items = [], onChange, placeholder, isHighlight
   };
 
   const handleRemove = (index) => {
+    if (disabled) return;
     const newItems = items.filter((_, i) => i !== index);
     onChange(newItems);
   };
@@ -198,21 +202,24 @@ const MultiValueInput = ({ label, items = [], onChange, placeholder, isHighlight
           type="text"
           className={`flex-1 p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 min-w-0 transition-all duration-300 ${
             isHighlighted ? 'border-yellow-400 bg-yellow-50 ring-2 ring-yellow-200' : 'border-gray-300'
-          }`}
+          } ${disabled ? 'bg-gray-100 cursor-not-allowed opacity-60' : ''}`}
           value={inputValue}
           onChange={(e) => setInputValue(e.target.value)}
           onKeyDown={handleKeyDown}
           placeholder={placeholder}
+          disabled={disabled}
         />
-        <Button onClick={handleAdd} variant="secondary" icon={Plus}>추가</Button>
+        <Button onClick={handleAdd} variant="secondary" icon={Plus} disabled={disabled}>추가</Button>
       </div>
       <div className="space-y-2">
         {Array.isArray(items) && items.map((item, idx) => (
           <div key={idx} className="flex items-center justify-between bg-gray-50 p-3 rounded-lg border border-gray-100 group hover:border-blue-200 transition-colors">
             <span className="text-sm text-gray-700 break-all">{item}</span>
-            <button onClick={() => handleRemove(idx)} className="text-gray-400 hover:text-red-500 p-1 shrink-0">
-              <Trash2 size={16} />
-            </button>
+            {!disabled && (
+              <button onClick={() => handleRemove(idx)} className="text-gray-400 hover:text-red-500 p-1 shrink-0">
+                <Trash2 size={16} />
+              </button>
+            )}
           </div>
         ))}
         {(!items || items.length === 0) && <p className="text-xs text-gray-400 ml-1">등록된 항목이 없습니다.</p>}
@@ -266,7 +273,7 @@ const Card = ({ title, children, onDelete, onEdit, expandedContent }) => {
 };
 
 // --- Auth Component ---
-const AuthScreen = () => {
+const AuthScreen = ({ onGuestMode }) => {
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -343,16 +350,40 @@ const AuthScreen = () => {
           </Button>
         </form>
 
-        <div className="mt-6 text-center text-sm text-gray-500">
-          {resetMode ? (
-            <button onClick={() => setResetMode(false)} className="text-blue-600 hover:underline">돌아가기</button>
-          ) : (
-            <>
-              {isLogin ? "계정이 없으신가요? " : "이미 계정이 있으신가요? "}
-              <button onClick={() => setIsLogin(!isLogin)} className="text-blue-600 font-semibold hover:underline">{isLogin ? '회원가입' : '로그인'}</button>
-              {isLogin && <div className="mt-2"><button onClick={() => setResetMode(true)} className="text-gray-400 hover:text-gray-600 text-xs">비밀번호 찾기</button></div>}
-            </>
+        <div className="mt-6 space-y-4">
+          {!resetMode && (
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-gray-300"></div>
+              </div>
+              <div className="relative flex justify-center text-sm">
+                <span className="px-2 bg-white text-gray-500">또는</span>
+              </div>
+            </div>
           )}
+          
+          {!resetMode && (
+            <Button 
+              type="button"
+              variant="secondary" 
+              className="w-full py-2.5 border-2 border-dashed border-gray-300 hover:border-blue-400 hover:bg-blue-50"
+              onClick={onGuestMode}
+            >
+              로그인 없이 참여하기
+            </Button>
+          )}
+
+          <div className="text-center text-sm text-gray-500">
+            {resetMode ? (
+              <button onClick={() => setResetMode(false)} className="text-blue-600 hover:underline">돌아가기</button>
+            ) : (
+              <>
+                {isLogin ? "계정이 없으신가요? " : "이미 계정이 있으신가요? "}
+                <button onClick={() => setIsLogin(!isLogin)} className="text-blue-600 font-semibold hover:underline">{isLogin ? '회원가입' : '로그인'}</button>
+                {isLogin && <div className="mt-2"><button onClick={() => setResetMode(true)} className="text-gray-400 hover:text-gray-600 text-xs">비밀번호 찾기</button></div>}
+              </>
+            )}
+          </div>
         </div>
       </div>
     </div>
@@ -363,6 +394,8 @@ const AuthScreen = () => {
 
 export default function App() {
   const [user, setUser] = useState(null);
+  const [isGuestMode, setIsGuestMode] = useState(false);
+  const [guestUserId, setGuestUserId] = useState(null);
   const [activeTab, setActiveTab] = useState(TABS.GENERATOR);
   const [mobileSubTab, setMobileSubTab] = useState('form');
   const [tutorialStep, setTutorialStep] = useState(0);
@@ -434,12 +467,71 @@ export default function App() {
     window.removeEventListener('touchend', stopResize);
   };
 
+  // --- Find First User for Guest Mode ---
+  const findFirstUserId = async () => {
+    if (!db) return null;
+    try {
+      const usersRef = collection(db, 'artifacts', appId, 'users');
+      const snapshot = await getDocs(usersRef);
+      if (snapshot.empty) return null;
+      
+      // Find user with earliest experience or company creation
+      let firstUserId = null;
+      let earliestTime = null;
+      
+      for (const userDoc of snapshot.docs) {
+        const userId = userDoc.id;
+        const expRef = collection(db, 'artifacts', appId, 'users', userId, 'experiences');
+        const compRef = collection(db, 'artifacts', appId, 'users', userId, 'companies');
+        
+        const [expSnapshot, compSnapshot] = await Promise.all([
+          getDocs(query(expRef, orderBy('createdAt', 'asc'), firestoreLimit(1))),
+          getDocs(query(compRef, orderBy('createdAt', 'asc'), firestoreLimit(1)))
+        ]);
+        
+        const expTime = expSnapshot.docs[0]?.data()?.createdAt?.toMillis();
+        const compTime = compSnapshot.docs[0]?.data()?.createdAt?.toMillis();
+        
+        const minTime = expTime && compTime 
+          ? Math.min(expTime, compTime)
+          : expTime || compTime;
+        
+        if (minTime && (!earliestTime || minTime < earliestTime)) {
+          earliestTime = minTime;
+          firstUserId = userId;
+        }
+      }
+      
+      // If no data found, use first user in collection
+      return firstUserId || snapshot.docs[0].id;
+    } catch (error) {
+      console.error("Error finding first user:", error);
+      return null;
+    }
+  };
+
+  // --- Guest Mode Handler ---
+  const handleGuestMode = async () => {
+    const firstUserId = await findFirstUserId();
+    if (!firstUserId) {
+      alert('샘플 데이터를 찾을 수 없습니다. 먼저 계정을 생성해주세요.');
+      return;
+    }
+    setGuestUserId(firstUserId);
+    setIsGuestMode(true);
+    setTutorialStep(1);
+  };
+
   // --- Auth & Data Fetching ---
   useEffect(() => {
     if (!auth) return;
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser);
-      if (currentUser) setTutorialStep(1);
+      if (currentUser) {
+        setIsGuestMode(false);
+        setGuestUserId(null);
+        setTutorialStep(1);
+      }
     });
     return () => unsubscribe();
   }, []);
@@ -449,20 +541,23 @@ export default function App() {
   }, [activeTab]);
 
   useEffect(() => {
-    if (!user || !db) return;
+    if (!db) return;
+    
+    const targetUserId = isGuestMode ? guestUserId : (user?.uid);
+    if (!targetUserId) return;
     
     const subExp = onSnapshot(
-      query(collection(db, 'artifacts', appId, 'users', user.uid, 'experiences'), orderBy('createdAt', 'desc')),
+      query(collection(db, 'artifacts', appId, 'users', targetUserId, 'experiences'), orderBy('createdAt', 'desc')),
       (snapshot) => setExperiences(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })))
     );
 
     const subComp = onSnapshot(
-      query(collection(db, 'artifacts', appId, 'users', user.uid, 'companies'), orderBy('createdAt', 'desc')),
+      query(collection(db, 'artifacts', appId, 'users', targetUserId, 'companies'), orderBy('createdAt', 'desc')),
       (snapshot) => setCompanies(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })))
     );
 
     const subProf = onSnapshot(
-      query(collection(db, 'artifacts', appId, 'users', user.uid, 'profiles'), firestoreLimit(1)),
+      query(collection(db, 'artifacts', appId, 'users', targetUserId, 'profiles'), firestoreLimit(1)),
       (snapshot) => {
          if (snapshot.empty) {
            // Init empty profile logic could be here if needed
@@ -482,12 +577,16 @@ export default function App() {
     );
 
     return () => { subExp(); subComp(); subProf(); };
-  }, [user, activeTab]); 
+  }, [user, isGuestMode, guestUserId, activeTab]); 
 
   // --- Helpers ---
   const nextTutorial = () => {
     if (tutorialStep === 1) setTutorialStep(2);
     else setTutorialStep(0);
+  };
+
+  const finishTutorial = () => {
+    setTutorialStep(0);
   };
 
   const showStatus = (type, text) => {
@@ -504,6 +603,7 @@ export default function App() {
 
   // --- CRUD Operations ---
   const handleSave = async (targetName, colName, data, clearFn) => {
+    if (isGuestMode) return alert("게스트 모드에서는 데이터를 저장할 수 없습니다.");
     if (!user) return alert("로그인이 필요합니다.");
     if (savingTarget) return;
     setSavingTarget(targetName); 
@@ -529,6 +629,7 @@ export default function App() {
   };
 
   const handleSaveProfile = async () => {
+    if (isGuestMode) return alert("게스트 모드에서는 데이터를 저장할 수 없습니다.");
     if (!user) return alert("로그인이 필요합니다.");
     setSavingTarget('profile');
     setStatusMsg(null);
@@ -549,6 +650,12 @@ export default function App() {
   };
 
   const handleLogout = async () => {
+    if (isGuestMode) {
+      setIsGuestMode(false);
+      setGuestUserId(null);
+      setUser(null);
+      return;
+    }
     if(confirm('로그아웃 하시겠습니까?')) await signOut(auth);
   };
 
@@ -556,6 +663,7 @@ export default function App() {
   const resetCompForm = () => setCompForm(COMP_FIELDS.reduce((acc, cur) => ({ ...acc, [cur.id]: '' }), {}));
   
   const handleEdit = (colName, item, setFormFn) => {
+    if (isGuestMode) return alert("게스트 모드에서는 데이터를 수정할 수 없습니다.");
     setFormFn(item); 
     setEditMode({ active: true, id: item.id, collection: colName });
     setMobileSubTab('form');
@@ -573,6 +681,7 @@ export default function App() {
   };
 
   const handleDelete = async (colName, id) => {
+    if (isGuestMode) return alert("게스트 모드에서는 데이터를 삭제할 수 없습니다.");
     if (!confirm('정말 삭제하시겠습니까?')) return;
     try {
       await deleteDoc(doc(db, 'artifacts', appId, 'users', user.uid, colName, id));
@@ -687,7 +796,7 @@ ${expInfoStr}
   };
 
   // --- Sidebar ---
-  const Sidebar = ({ activeTab, setActiveTab, setEditMode, tutorialStep, user, handleLogout }) => (
+  const Sidebar = ({ activeTab, setActiveTab, setEditMode, tutorialStep, user, handleLogout, isGuestMode }) => (
     <div className={`hidden md:flex w-64 bg-white border-r border-gray-200 flex-col shadow-lg relative ${tutorialStep > 0 ? 'z-auto' : 'z-10'}`}>
         <div className="p-6 border-b border-gray-100">
           <div className="flex items-center gap-2 text-blue-700 font-bold text-xl">
@@ -714,14 +823,21 @@ ${expInfoStr}
           </div>
         </nav>
         <div className="p-4 bg-gray-50 border-t">
-           <p className="text-sm font-bold text-gray-700 mb-2 truncate">{user.email}</p>
-           <button onClick={handleLogout} className="text-sm text-gray-500 flex items-center gap-2 hover:text-red-600"><LogOut size={16}/> 로그아웃</button>
+           <p className="text-sm font-bold text-gray-700 mb-2 truncate">
+             {isGuestMode ? '게스트 모드 (읽기 전용)' : (user?.email || '')}
+           </p>
+           {isGuestMode && (
+             <p className="text-xs text-gray-500 mb-2">데이터 입력/수정 불가, 프롬프트 생성 가능</p>
+           )}
+           <button onClick={handleLogout} className="text-sm text-gray-500 flex items-center gap-2 hover:text-red-600">
+             <LogOut size={16}/> {isGuestMode ? '나가기' : '로그아웃'}
+           </button>
         </div>
     </div>
   );
 
   if (!auth) return <div className="p-10 text-red-500">Firebase 설정 오류</div>;
-  if (!user) return <AuthScreen />;
+  if (!user && !isGuestMode) return <AuthScreen onGuestMode={handleGuestMode} />;
 
   return (
     <div className="flex h-screen bg-gray-100 font-sans overflow-hidden relative">
@@ -775,11 +891,14 @@ ${expInfoStr}
       {/* Mobile Header */}
       <div className="md:hidden fixed top-0 left-0 right-0 h-14 bg-white border-b border-gray-200 flex items-center justify-between px-4 z-40">
          <div className="flex items-center gap-2 text-blue-700 font-bold text-lg"><Sparkles className="fill-blue-600" size={20} /> <span>자소서 GPT</span></div>
-         <button onClick={handleLogout} className="text-gray-500"><LogOut size={20}/></button>
+         <div className="flex items-center gap-2">
+           {isGuestMode && <span className="text-xs text-gray-500">게스트</span>}
+           <button onClick={handleLogout} className="text-gray-500"><LogOut size={20}/></button>
+         </div>
       </div>
 
       {/* Sidebar */}
-      <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} setEditMode={setEditMode} tutorialStep={tutorialStep} user={user} handleLogout={handleLogout} />
+      <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} setEditMode={setEditMode} tutorialStep={tutorialStep} user={user} handleLogout={handleLogout} isGuestMode={isGuestMode} />
 
       {/* Main Content */}
       <div className="flex-1 flex flex-col h-screen overflow-hidden pt-14 md:pt-0 pb-16 md:pb-0">
@@ -954,13 +1073,20 @@ ${expInfoStr}
                         <button onClick={() => setShowHelp('experience')} className="text-gray-400 hover:text-blue-500"><HelpCircle size={20}/></button>
                         {editMode.active && editMode.collection==='experiences' && <Button variant="ghost" onClick={() => cancelEdit(resetExpForm)}><XCircle size={14}/> 취소</Button>}
                      </div>
+                     {isGuestMode && (
+                       <div className="p-4 bg-yellow-50 border-b border-yellow-200">
+                         <p className="text-sm text-yellow-800 flex items-center gap-2">
+                           <AlertCircle size={16}/> 게스트 모드에서는 데이터를 입력하거나 수정할 수 없습니다.
+                         </p>
+                       </div>
+                     )}
                      <div className="flex-1 lg:overflow-y-auto p-6 custom-scrollbar space-y-4 min-h-0">
                         {EXP_QUESTIONS.map(q => (
-                           <InputField key={q.id} label={q.label} value={expForm[q.id]} onChange={v => setExpForm(p => ({...p, [q.id]: v}))} multiline={q.id!=='title'} isHighlighted={isFormHighlighted} />
+                           <InputField key={q.id} label={q.label} value={expForm[q.id]} onChange={v => setExpForm(p => ({...p, [q.id]: v}))} multiline={q.id!=='title'} isHighlighted={isFormHighlighted} disabled={isGuestMode} />
                         ))}
                      </div>
                      <div className="p-4 border-t border-gray-100 shrink-0 bg-white">
-                        <Button className="w-full" onClick={() => handleSave('experience', 'experiences', expForm, resetExpForm)} disabled={savingTarget === 'experience'} icon={Save}>{savingTarget === 'experience' ? '저장 중...' : '저장하기'}</Button>
+                        <Button className="w-full" onClick={() => handleSave('experience', 'experiences', expForm, resetExpForm)} disabled={savingTarget === 'experience' || isGuestMode} icon={Save}>{savingTarget === 'experience' ? '저장 중...' : '저장하기'}</Button>
                      </div>
                   </div>
 
@@ -969,7 +1095,7 @@ ${expInfoStr}
                      <h3 className="font-bold text-gray-700 mb-4 shrink-0">목록 ({experiences.length})</h3>
                      <div className="grid gap-4 pb-24 lg:pb-10 pr-2 custom-scrollbar lg:overflow-y-auto h-auto lg:h-full">
                         {experiences.map(e => (
-                           <Card key={e.id} title={e.title} onDelete={()=>handleDelete('experiences', e.id)} onEdit={()=>handleEdit('experiences', e, setExpForm)} 
+                           <Card key={e.id} title={e.title} onDelete={isGuestMode ? null : ()=>handleDelete('experiences', e.id)} onEdit={isGuestMode ? null : ()=>handleEdit('experiences', e, setExpForm)} 
                                  expandedContent={<div className="space-y-3 text-sm">
                                   {EXP_QUESTIONS.slice(1).map(q => 
                                     e[q.id] ? (
@@ -1005,15 +1131,22 @@ ${expInfoStr}
                          <button onClick={() => setShowHelp('company')} className="text-gray-400 hover:text-blue-500"><HelpCircle size={20}/></button>
                          {editMode.active && editMode.collection==='companies' && <Button variant="ghost" onClick={() => cancelEdit(resetCompForm)}><XCircle size={14}/> 취소</Button>}
                       </div>
+                      {isGuestMode && (
+                        <div className="p-4 bg-yellow-50 border-b border-yellow-200">
+                          <p className="text-sm text-yellow-800 flex items-center gap-2">
+                            <AlertCircle size={16}/> 게스트 모드에서는 데이터를 입력하거나 수정할 수 없습니다.
+                          </p>
+                        </div>
+                      )}
                       <div className="flex-1 lg:overflow-y-auto p-6 custom-scrollbar space-y-4 min-h-0">
-                         <InputField label="기업명" value={compForm.name} onChange={v=>setCompForm(p=>({...p, name:v}))} isHighlighted={isFormHighlighted} />
-                         <InputField label="직무" value={compForm.role} onChange={v=>setCompForm(p=>({...p, role:v}))} isHighlighted={isFormHighlighted} />
+                         <InputField label="기업명" value={compForm.name} onChange={v=>setCompForm(p=>({...p, name:v}))} isHighlighted={isFormHighlighted} disabled={isGuestMode} />
+                         <InputField label="직무" value={compForm.role} onChange={v=>setCompForm(p=>({...p, role:v}))} isHighlighted={isFormHighlighted} disabled={isGuestMode} />
                          {COMP_FIELDS.slice(2).map(f => (
-                            <InputField key={f.id} label={f.label} value={compForm[f.id]} onChange={v=>setCompForm(p=>({...p, [f.id]:v}))} multiline placeholder={f.placeholder} isHighlighted={isFormHighlighted} />
+                            <InputField key={f.id} label={f.label} value={compForm[f.id]} onChange={v=>setCompForm(p=>({...p, [f.id]:v}))} multiline placeholder={f.placeholder} isHighlighted={isFormHighlighted} disabled={isGuestMode} />
                          ))}
                       </div>
                       <div className="p-4 border-t border-gray-100 shrink-0 bg-white">
-                         <Button className="w-full" onClick={() => handleSave('company', 'companies', compForm, resetCompForm)} disabled={savingTarget === 'company'} icon={Save}>{savingTarget === 'company' ? '저장 중...' : '저장하기'}</Button>
+                         <Button className="w-full" onClick={() => handleSave('company', 'companies', compForm, resetCompForm)} disabled={savingTarget === 'company' || isGuestMode} icon={Save}>{savingTarget === 'company' ? '저장 중...' : '저장하기'}</Button>
                       </div>
                    </div>
 
@@ -1021,7 +1154,7 @@ ${expInfoStr}
                       <h3 className="font-bold text-gray-700 mb-4 shrink-0">목록 ({companies.length})</h3>
                       <div className="grid gap-4 pb-24 lg:pb-10 pr-2 custom-scrollbar lg:overflow-y-auto h-auto lg:h-full">
                          {companies.map(c => (
-                            <Card key={c.id} title={`${c.name} (${c.role})`} onDelete={()=>handleDelete('companies', c.id)} onEdit={()=>handleEdit('companies', c, setCompForm)}
+                            <Card key={c.id} title={`${c.name} (${c.role})`} onDelete={isGuestMode ? null : ()=>handleDelete('companies', c.id)} onEdit={isGuestMode ? null : ()=>handleEdit('companies', c, setCompForm)}
                                   expandedContent={<div className="space-y-3 text-sm">
                                   {COMP_FIELDS.slice(2).map(f => 
                                     c[f.id] ? (
@@ -1051,12 +1184,19 @@ ${expInfoStr}
              <div className="max-w-3xl mx-auto h-full overflow-y-auto custom-scrollbar p-1 pb-32 lg:pb-0">
                 <div className={`bg-white p-8 rounded-xl border border-gray-200 mb-20 md:mb-0 ${isFormHighlighted ? 'ring-4 ring-yellow-300 transition-all duration-500' : ''}`}>
                    <h3 className="font-bold text-xl mb-6 text-blue-800 flex items-center gap-2"><User size={24}/> 나의 정보 관리 (자동 저장 아님)</h3>
+                   {isGuestMode && (
+                     <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg mb-6">
+                       <p className="text-sm text-yellow-800 flex items-center gap-2">
+                         <AlertCircle size={16}/> 게스트 모드에서는 데이터를 입력하거나 수정할 수 없습니다.
+                       </p>
+                     </div>
+                   )}
                    <div className="space-y-8">
                       {PROFILE_FIELDS.map(f => (
-                         <MultiValueInput key={f.id} label={f.label} items={profForm[f.id] || []} onChange={newItems => setProfForm(prev => ({ ...prev, [f.id]: newItems }))} placeholder={`${f.label.split(' ').slice(1).join(' ')} 입력 후 Enter 또는 추가 버튼`} isHighlighted={isFormHighlighted} />
+                         <MultiValueInput key={f.id} label={f.label} items={profForm[f.id] || []} onChange={newItems => setProfForm(prev => ({ ...prev, [f.id]: newItems }))} placeholder={`${f.label.split(' ').slice(1).join(' ')} 입력 후 Enter 또는 추가 버튼`} isHighlighted={isFormHighlighted} disabled={isGuestMode} />
                       ))}
                       <div className="pt-4 border-t pb-20 md:pb-0">
-                        <Button className="w-full py-3" onClick={handleSaveProfile} disabled={savingTarget === 'profile'} icon={Save}>{savingTarget === 'profile' ? '저장 중...' : (profile ? '정보 업데이트' : '정보 저장')}</Button>
+                        <Button className="w-full py-3" onClick={handleSaveProfile} disabled={savingTarget === 'profile' || isGuestMode} icon={Save}>{savingTarget === 'profile' ? '저장 중...' : (profile ? '정보 업데이트' : '정보 저장')}</Button>
                         <p className="text-xs text-gray-400 text-center mt-2">* 작성 후 반드시 저장 버튼을 눌러주세요.</p>
                       </div>
                    </div>
