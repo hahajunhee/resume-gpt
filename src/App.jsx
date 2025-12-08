@@ -6,7 +6,8 @@ import {
   createUserWithEmailAndPassword, 
   sendPasswordResetEmail,
   signOut, 
-  onAuthStateChanged 
+  onAuthStateChanged,
+  signInAnonymously
 } from 'firebase/auth';
 import { 
   getFirestore, collection, doc, addDoc, updateDoc, deleteDoc, onSnapshot, query, orderBy, serverTimestamp, limit as firestoreLimit, writeBatch, getDocs
@@ -396,6 +397,7 @@ export default function App() {
   const [user, setUser] = useState(null);
   const [isGuestMode, setIsGuestMode] = useState(false);
   const [guestUserId, setGuestUserId] = useState(null);
+  const [isGuestAuth, setIsGuestAuth] = useState(false);
   const [activeTab, setActiveTab] = useState(TABS.GENERATOR);
   const [mobileSubTab, setMobileSubTab] = useState('form');
   const [tutorialStep, setTutorialStep] = useState(0);
@@ -519,6 +521,15 @@ export default function App() {
     }
     setGuestUserId(firstUserId);
     setIsGuestMode(true);
+    setIsGuestAuth(true);
+    try {
+      if (auth && !auth.currentUser) {
+        await signInAnonymously(auth);
+      }
+    } catch (error) {
+      console.error("Anonymous signin failed:", error);
+      alert('게스트 모드 로그인에 실패했습니다. 잠시 후 다시 시도해주세요.');
+    }
     setTutorialStep(1);
   };
 
@@ -528,13 +539,15 @@ export default function App() {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser);
       if (currentUser) {
-        setIsGuestMode(false);
-        setGuestUserId(null);
+        if (!isGuestAuth) {
+          setIsGuestMode(false);
+          setGuestUserId(null);
+        }
         setTutorialStep(1);
       }
     });
     return () => unsubscribe();
-  }, []);
+  }, [isGuestAuth]);
 
   useEffect(() => {
     setMobileSubTab('form');
@@ -653,6 +666,8 @@ export default function App() {
     if (isGuestMode) {
       setIsGuestMode(false);
       setGuestUserId(null);
+      setIsGuestAuth(false);
+      try { await signOut(auth); } catch (e) { /* noop */ }
       setUser(null);
       return;
     }
